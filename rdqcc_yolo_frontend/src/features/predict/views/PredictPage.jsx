@@ -353,9 +353,9 @@ const PredictPage = () => {
                 </div>
             )}
 
-            {/* New layout structure - full width */}
-            <div className="flex flex-col gap-4 h-[calc(100vh-180px)] min-h-[600px]">
-                {/* Button Container above Image Visualization */}
+            {/* Main content area with updated layout */}
+            <div className="flex flex-col gap-4 max-h-[calc(100vh-180px)] min-h-[600px]">
+                {/* Button Container - Now horizontal */}
                 <div className="w-full">
                     <ButtonContainer
                         onImageSelect={handleImagePreview}
@@ -366,18 +366,18 @@ const PredictPage = () => {
                 </div>
 
                 {/* Main content area - split into two columns */}
-                <div className="flex flex-col lg:flex-row gap-4 flex-grow">
+                <div className="flex flex-col lg:flex-row gap-4 flex-grow overflow-hidden">
                     {/* Left column - Image Visualization and Detection Results */}
                     <div className="lg:w-8/12 flex flex-col gap-4 overflow-hidden">
-                        {/* Top section - Image Visualization */}
-                        <div className="flex-grow">
+                        {/* Top section - Image Visualization - Increased height */}
+                        <div className="flex-grow h-3/4 overflow-hidden">
                             <div
-                                className="border border-neutral-gray border-l-4 border-l-accent-pink rounded-lg p-4 h-full shadow-card bg-neutral-white">
-                                <div className="flex justify-between items-center mb-4">
+                                className="border border-neutral-gray border-l-4 border-l-accent-pink rounded-lg p-4 h-full shadow-card bg-neutral-white overflow-hidden">
+                                <div className="flex justify-between items-center mb-2">
                                     <h3 className="text-primary-blue text-xl font-medium">Image Visualization</h3>
                                 </div>
 
-                                <div className="h-[calc(100%-40px)]">
+                                <div className="h-[calc(100%-38px)] overflow-hidden">
                                     <ImageDisplay
                                         images={resultImages}
                                         activeTab={activeTab}
@@ -388,15 +388,15 @@ const PredictPage = () => {
                             </div>
                         </div>
 
-                        {/* Bottom section - Detection Results */}
-                        <div className="h-1/3 min-h-[200px]">
+                        {/* Bottom section - Detection Results - Reduced height */}
+                        <div className="h-1/4 min-h-[180px] max-h-[180px] overflow-hidden">
                             <div
-                                className="border border-neutral-gray border-l-4 border-l-success rounded-lg p-4 h-full shadow-card bg-neutral-white">
-                                <div className="flex justify-between items-center mb-4">
+                                className="border border-neutral-gray border-l-4 border-l-success rounded-lg p-4 h-full shadow-card bg-neutral-white overflow-hidden">
+                                <div className="flex justify-between items-center mb-2">
                                     <h3 className="text-primary-blue text-xl font-medium">Detection Results</h3>
                                 </div>
 
-                                <div className="h-[calc(100%-40px)]">
+                                <div className="h-[calc(100%-38px)] overflow-auto">
                                     <ResultsList
                                         detections={predictions.finalDetections}
                                         onVisibilityChange={handleDetectionVisibilityChange}
@@ -408,7 +408,7 @@ const PredictPage = () => {
                     </div>
 
                     {/* Right column - AI Report */}
-                    <div className="lg:w-4/12">
+                    <div className="lg:w-4/12 overflow-hidden">
                         <div className="h-full">
                             <AIReport
                                 currentImage={currentImage}

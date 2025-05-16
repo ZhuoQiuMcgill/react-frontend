@@ -23,7 +23,7 @@ const ButtonContainer = ({
     };
 
     return (
-        <div className="button-container flex flex-col gap-4">
+        <div className="button-container flex flex-row gap-4 mb-4">
             {/* Hidden file input */}
             <input
                 type="file"
@@ -36,7 +36,7 @@ const ButtonContainer = ({
             {/* Upload image button */}
             <button
                 onClick={handleUploadClick}
-                className="w-full bg-gradient-primary text-neutral-white p-4 rounded-lg font-medium
+                className="flex-1 bg-gradient-primary text-neutral-white p-4 rounded-lg font-medium
                  shadow-button hover:filter hover:brightness-110
                  transition transform hover:-translate-y-0.5 hover:shadow-button-hover
                  flex items-center justify-center gap-2"
@@ -51,7 +51,7 @@ const ButtonContainer = ({
             <button
                 onClick={onStartInference}
                 disabled={isLoading}
-                className="w-full bg-gradient-accent text-neutral-white p-4 rounded-lg font-medium
+                className="flex-1 bg-gradient-accent text-neutral-white p-4 rounded-lg font-medium
                  shadow-button hover:filter hover:brightness-110
                  transition transform hover:-translate-y-0.5 hover:shadow-button-hover
                  disabled:bg-neutral-gray disabled:text-neutral-dark-gray disabled:cursor-not-allowed
@@ -79,7 +79,7 @@ const ButtonContainer = ({
             {/* Configuration button */}
             <button
                 onClick={onConfigClick}
-                className="w-full bg-neutral-white text-primary-dark-blue p-4 rounded-lg font-medium
+                className="flex-1 bg-neutral-white text-primary-dark-blue p-4 rounded-lg font-medium
                  border border-primary-light-blue shadow-card hover:bg-neutral-light-gray
                  transition transform hover:-translate-y-0.5
                  flex items-center justify-center gap-2"

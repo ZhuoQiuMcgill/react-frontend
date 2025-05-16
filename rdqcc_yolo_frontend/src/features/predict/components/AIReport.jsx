@@ -118,13 +118,13 @@ const AIReport = ({currentImage, predictions}) => {
     };
 
     return (
-        <div className="h-full border border-neutral-gray rounded-lg bg-neutral-white shadow-card flex flex-col">
+        <div className="h-full border border-neutral-gray rounded-lg bg-neutral-white shadow-card flex flex-col overflow-hidden">
             <div
                 className="ai-report-header flex justify-between items-center p-4 border-b border-neutral-gray bg-neutral-light-gray sticky top-0 z-10">
                 <h4 className="m-0 text-primary-dark-blue font-semibold">AI Report</h4>
             </div>
 
-            <div className="p-6 flex-grow overflow-y-auto">
+            <div className="p-6 flex-grow overflow-y-auto max-h-[calc(100vh-250px)]">
                 {!report ? (
                     <div className="flex flex-col items-center justify-center h-full">
                         {error && (

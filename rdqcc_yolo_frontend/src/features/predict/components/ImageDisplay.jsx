@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import {useState} from 'react';
 
-const ImageDisplay = ({ images, activeTab, setActiveTab, onImageClick }) => {
+const ImageDisplay = ({images, activeTab, setActiveTab, onImageClick}) => {
     // Simplified tabs configuration - only final result and first stage
     const tabs = [
         {id: 'final-result', label: 'Final Result', imageKey: 'finalResult', title: 'Final Detection Result:'},
@@ -13,8 +13,9 @@ const ImageDisplay = ({ images, activeTab, setActiveTab, onImageClick }) => {
     };
 
     return (
-        <div className="w-full flex flex-col overflow-hidden">
-            <div className="image-tabs flex-grow border border-neutral-gray rounded-lg overflow-hidden bg-neutral-white shadow-card flex flex-col">
+        <div className="w-full flex flex-col h-full overflow-hidden">
+            <div
+                className="image-tabs flex-grow border border-neutral-gray rounded-lg overflow-hidden bg-neutral-white shadow-card flex flex-col">
                 {/* Tabs header */}
                 <div className="tabs-header flex bg-neutral-light-gray border-b border-neutral-gray overflow-x-auto">
                     {tabs.map((tab) => (
@@ -32,7 +33,7 @@ const ImageDisplay = ({ images, activeTab, setActiveTab, onImageClick }) => {
                     ))}
                 </div>
 
-                {/* Tabs content */}
+                {/* Tabs content - Added max-height constraint */}
                 <div className="tabs-content flex-grow overflow-hidden relative">
                     {tabs.map((tab) => (
                         <div
@@ -40,18 +41,23 @@ const ImageDisplay = ({ images, activeTab, setActiveTab, onImageClick }) => {
                             className={`tab-content p-4 h-full flex flex-col ${activeTab === tab.id ? 'block' : 'hidden'}`}
                         >
                             <div className="image-display-container h-full flex flex-col">
-                                <h4 className="text-left mb-4 text-primary-dark-blue font-semibold">
+                                <h4 className="text-left mb-2 text-primary-dark-blue font-semibold">
                                     {tab.title}
                                 </h4>
                                 <div
-                                    className="image-container flex-grow flex items-center justify-center bg-[#e0e0e0] border border-neutral-gray rounded relative overflow-hidden">
+                                    className="image-container flex-grow flex items-center justify-center bg-[#e0e0e0] border border-neutral-gray rounded relative overflow-hidden"
+                                >
                                     {images[tab.imageKey] ? (
-                                        <img
-                                            src={images[tab.imageKey]}
-                                            alt={tab.title}
-                                            className="max-w-full max-h-full object-contain cursor-zoom-in transition-opacity duration-300"
-                                            onClick={() => onImageClick(images[tab.imageKey])}
-                                        />
+                                        <div
+                                            className="w-full h-full flex items-center justify-center overflow-auto max-h-[calc(100vh-380px)]">
+                                            <img
+                                                src={images[tab.imageKey]}
+                                                alt={tab.title}
+                                                className="max-w-full max-h-full object-contain cursor-zoom-in transition-opacity duration-300"
+                                                style={{maxHeight: 'calc(100vh - 380px)'}}
+                                                onClick={() => onImageClick(images[tab.imageKey])}
+                                            />
+                                        </div>
                                     ) : (
                                         <div
                                             className="image-placeholder absolute inset-0 flex items-center justify-center text-neutral-dark-gray italic bg-[#e0e0e0]">
