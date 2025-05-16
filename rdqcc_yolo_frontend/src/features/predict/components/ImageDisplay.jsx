@@ -1,12 +1,10 @@
-import {useState, useEffect} from 'react';
+import { useState } from 'react';
 
-const ImageDisplay = ({images, activeTab, setActiveTab, onImageClick}) => {
-    // Tabs configuration
+const ImageDisplay = ({ images, activeTab, setActiveTab, onImageClick }) => {
+    // Simplified tabs configuration - only final result and first stage
     const tabs = [
         {id: 'final-result', label: 'Final Result', imageKey: 'finalResult', title: 'Final Detection Result:'},
         {id: 'first-stage', label: 'First Stage', imageKey: 'firstStage', title: 'First Stage Detections:'},
-        {id: 'cropped-image', label: 'Cropped Image', imageKey: 'cropped', title: 'Cropped Region:'},
-        {id: 'processed-image', label: 'Processed Image', imageKey: 'processed', title: 'Processed Detection:'}
     ];
 
     // Handle tab click
@@ -15,16 +13,15 @@ const ImageDisplay = ({images, activeTab, setActiveTab, onImageClick}) => {
     };
 
     return (
-        <div className="flex-grow flex flex-col overflow-hidden">
-            <div
-                className="image-tabs flex-grow border border-neutral-gray rounded-lg overflow-hidden bg-neutral-white shadow-card flex flex-col">
+        <div className="w-full flex flex-col overflow-hidden">
+            <div className="image-tabs flex-grow border border-neutral-gray rounded-lg overflow-hidden bg-neutral-white shadow-card flex flex-col">
                 {/* Tabs header */}
                 <div className="tabs-header flex bg-neutral-light-gray border-b border-neutral-gray overflow-x-auto">
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
                             className={`py-3 px-6 bg-transparent border-none border-b-3 font-medium transition-all flex-shrink-0
-                ${activeTab === tab.id
+                                ${activeTab === tab.id
                                 ? 'border-b-accent-pink text-primary-dark-blue bg-neutral-white'
                                 : 'border-b-transparent text-text-light hover:bg-black/[0.03] hover:text-primary-dark-blue'
                             }`}

@@ -1,17 +1,26 @@
-import { useState, useEffect } from 'react';
-import PredictForm from '../components/PredictForm';
-import ImageDisplay from '../components/ImageDisplay';
+import {useState, useEffect} from 'react';
 import ResultsList from '../components/ResultsList';
 import StatusMessage from '../components/StatusMessage';
 import ImageZoomModal from '../components/ImageZoomModal';
-import { usePredictService } from '../services/predictService';
-import { createImageWithBoxes } from '../utils/imageUtils';
+import {usePredictService} from '../services/predictService';
+import {createImageWithBoxes} from '../utils/imageUtils';
+import ImageDisplay from '../components/ImageDisplay';
+import ButtonContainer from '../components/ButtonContainer';
+import ConfigurationModal from '../components/ConfigurationModal';
+import AIReport from '../components/AIReport';
 
 const PredictPage = () => {
     // State for models
     const [models, setModels] = useState([]);
     const [defaultModels, setDefaultModels] = useState(null);
     const [modelsFetched, setModelsFetched] = useState(false);
+
+    // Configuration state
+    const [firstModelSelected, setFirstModelSelected] = useState('');
+    const [secondModelSelected, setSecondModelSelected] = useState('');
+    const [confidenceThreshold, setConfidenceThreshold] = useState(0.01); // Default set to 0.01
+    const [filterEnabled, setFilterEnabled] = useState(true); // Default set to true
+    const [configModalOpen, setConfigModalOpen] = useState(false);
 
     // State for images and predictions
     const [currentImage, setCurrentImage] = useState(null);
@@ -34,8 +43,6 @@ const PredictPage = () => {
     const [resultImages, setResultImages] = useState({
         finalResult: '',
         firstStage: '',
-        cropped: '',
-        processed: ''
     });
 
     const predictService = usePredictService();
@@ -103,8 +110,6 @@ const PredictPage = () => {
             setResultImages({
                 finalResult: currentImage || '',
                 firstStage: '',
-                cropped: '',
-                processed: ''
             });
         } else {
             // Keep the current image in final result view
@@ -116,7 +121,7 @@ const PredictPage = () => {
     };
 
     // Handle form submission for prediction
-    const handlePredictFormSubmit = async (formData) => {
+    const handleStartInference = async () => {
         if (!currentImage) {
             setStatusMessage({
                 type: 'error',
@@ -129,6 +134,19 @@ const PredictPage = () => {
         setIsLoading(true);
 
         try {
+            // Create form data for API request
+            const formData = new FormData();
+
+            // Convert data URL to file
+            const blob = await fetch(currentImage).then(r => r.blob());
+            formData.append('image', blob, 'image.jpg');
+
+            // Add model configurations
+            if (firstModelSelected) formData.append('first_model_filename', firstModelSelected);
+            if (secondModelSelected) formData.append('second_model_filename', secondModelSelected);
+            formData.append('first_confidence', confidenceThreshold);
+            formData.append('filter', filterEnabled ? 'true' : 'false');
+
             const result = await predictService.processPrediction(formData);
 
             if (result.success) {
@@ -211,7 +229,7 @@ const PredictPage = () => {
 
         try {
             // Create images with boxes
-            let newResultImages = { ...resultImages };
+            let newResultImages = {...resultImages};
 
             // Final result image
             if (currentImage) {
@@ -235,26 +253,6 @@ const PredictPage = () => {
                 }
             } else {
                 newResultImages.firstStage = '';
-            }
-
-            // Second stage images (Cropped/Processed)
-            if (Array.isArray(result.second_stage) && result.second_stage.length > 0) {
-                const firstResult = result.second_stage[0];
-
-                // Load cropped image if base64 data exists
-                const croppedSrc = firstResult?.cropped_image_base64
-                    ? `data:image/jpeg;base64,${firstResult.cropped_image_base64}`
-                    : '';
-                newResultImages.cropped = croppedSrc;
-
-                // Load processed image if base64 data exists
-                const processedSrc = firstResult?.processed_image_base64
-                    ? `data:image/jpeg;base64,${firstResult.processed_image_base64}`
-                    : '';
-                newResultImages.processed = processedSrc;
-            } else {
-                newResultImages.cropped = '';
-                newResultImages.processed = '';
             }
 
             // Update the result images state
@@ -345,102 +343,98 @@ const PredictPage = () => {
 
     return (
         <div className="w-full">
-            <h2 className="text-primary-dark-blue text-2xl font-semibold pb-2 mb-8 border-b-2 border-accent-pink">
+            <h2 className="text-primary-dark-blue text-2xl font-semibold pb-2 mb-6 border-b-2 border-accent-pink">
                 Two-Stage Image Inference
             </h2>
 
             {statusMessage && (
-                <div className="mb-6">
-                    <StatusMessage type={statusMessage.type} message={statusMessage.message} />
+                <div className="mb-4">
+                    <StatusMessage type={statusMessage.type} message={statusMessage.message}/>
                 </div>
             )}
 
-            {/* Desktop layout for large screens */}
-            <div className="hidden lg:flex gap-6 h-[calc(100vh-230px)] min-h-[600px]">
-                {/* Left column - Configuration */}
-                <div className="w-[22%] min-w-[250px] overflow-y-auto border border-neutral-gray border-l-4 border-l-primary-light-blue rounded-lg p-6 shadow-card bg-neutral-white">
-                    <PredictForm
-                        models={models}
-                        defaultModels={defaultModels}
-                        modelsFetched={modelsFetched}
-                        isLoading={isLoading}
-                        onSubmit={handlePredictFormSubmit}
+            {/* New layout structure - full width */}
+            <div className="flex flex-col gap-4 h-[calc(100vh-180px)] min-h-[600px]">
+                {/* Button Container above Image Visualization */}
+                <div className="w-full">
+                    <ButtonContainer
                         onImageSelect={handleImagePreview}
+                        onStartInference={handleStartInference}
+                        onConfigClick={() => setConfigModalOpen(true)}
+                        isLoading={isLoading}
                     />
                 </div>
 
-                {/* Middle column - Image Display */}
-                <div className="w-1/2 flex-grow border border-neutral-gray border-l-4 border-l-accent-pink rounded-lg p-6 shadow-card bg-neutral-white flex flex-col overflow-hidden">
-                    <div className="flex justify-between items-center mb-4 pb-2 border-b border-neutral-gray">
-                        <h3 className="text-primary-blue text-xl font-medium">Image Visualization</h3>
-                        {statusMessage && statusMessage.type === 'success' && (
-                            <div className="inline-block px-4 py-2 text-sm rounded bg-[#e4f1e4] text-[#1b5e20] border border-[#a5d6a7]">
-                                {statusMessage.message}
+                {/* Main content area - split into two columns */}
+                <div className="flex flex-col lg:flex-row gap-4 flex-grow">
+                    {/* Left column - Image Visualization and Detection Results */}
+                    <div className="lg:w-8/12 flex flex-col gap-4 overflow-hidden">
+                        {/* Top section - Image Visualization */}
+                        <div className="flex-grow">
+                            <div
+                                className="border border-neutral-gray border-l-4 border-l-accent-pink rounded-lg p-4 h-full shadow-card bg-neutral-white">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-primary-blue text-xl font-medium">Image Visualization</h3>
+                                </div>
+
+                                <div className="h-[calc(100%-40px)]">
+                                    <ImageDisplay
+                                        images={resultImages}
+                                        activeTab={activeTab}
+                                        setActiveTab={setActiveTab}
+                                        onImageClick={handleImageClick}
+                                    />
+                                </div>
                             </div>
-                        )}
+                        </div>
+
+                        {/* Bottom section - Detection Results */}
+                        <div className="h-1/3 min-h-[200px]">
+                            <div
+                                className="border border-neutral-gray border-l-4 border-l-success rounded-lg p-4 h-full shadow-card bg-neutral-white">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-primary-blue text-xl font-medium">Detection Results</h3>
+                                </div>
+
+                                <div className="h-[calc(100%-40px)]">
+                                    <ResultsList
+                                        detections={predictions.finalDetections}
+                                        onVisibilityChange={handleDetectionVisibilityChange}
+                                        onAllVisibilityChange={handleAllDetectionsVisibilityChange}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <ImageDisplay
-                        images={resultImages}
-                        activeTab={activeTab}
-                        setActiveTab={setActiveTab}
-                        onImageClick={handleImageClick}
-                    />
-                </div>
-
-                {/* Right column - Results */}
-                <div className="w-[24%] min-w-[250px] border border-neutral-gray border-l-4 border-l-success rounded-lg p-6 shadow-card bg-neutral-white flex flex-col overflow-hidden">
-                    <h3 className="text-primary-blue text-xl font-medium mb-4 pb-2 border-b border-neutral-gray">
-                        Detection Results
-                    </h3>
-
-                    <div className="flex-grow overflow-hidden">
-                        <ResultsList
-                            detections={predictions.finalDetections}
-                            onVisibilityChange={handleDetectionVisibilityChange}
-                            onAllVisibilityChange={handleAllDetectionsVisibilityChange}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* Mobile layout for smaller screens */}
-            <div className="lg:hidden flex flex-col gap-6">
-                {/* Configuration Section */}
-                <div className="border border-neutral-gray border-l-4 border-l-primary-light-blue rounded-lg p-6 shadow-card bg-neutral-white">
-                    <PredictForm
-                        models={models}
-                        defaultModels={defaultModels}
-                        modelsFetched={modelsFetched}
-                        isLoading={isLoading}
-                        onSubmit={handlePredictFormSubmit}
-                        onImageSelect={handleImagePreview}
-                        isMobile={true}
-                    />
-                </div>
-
-                {/* Results Section */}
-                <div className="border border-neutral-gray border-l-4 border-l-accent-pink rounded-lg p-6 shadow-card bg-neutral-white">
-                    <h3 className="text-primary-blue text-xl font-medium mb-4 pb-2 border-b border-neutral-gray">
-                        Inference Results
-                    </h3>
-
-                    <ImageDisplay
-                        images={resultImages}
-                        activeTab={activeTab}
-                        setActiveTab={setActiveTab}
-                        onImageClick={handleImageClick}
-                    />
-
-                    <div className="mt-6">
-                        <ResultsList
-                            detections={predictions.finalDetections}
-                            onVisibilityChange={handleDetectionVisibilityChange}
-                            onAllVisibilityChange={handleAllDetectionsVisibilityChange}
-                        />
+                    {/* Right column - AI Report */}
+                    <div className="lg:w-4/12">
+                        <div className="h-full">
+                            <AIReport
+                                currentImage={currentImage}
+                                predictions={predictions}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Configuration Modal */}
+            <ConfigurationModal
+                isOpen={configModalOpen}
+                onClose={() => setConfigModalOpen(false)}
+                models={models}
+                defaultModels={defaultModels}
+                modelsFetched={modelsFetched}
+                firstModelSelected={firstModelSelected}
+                setFirstModelSelected={setFirstModelSelected}
+                secondModelSelected={secondModelSelected}
+                setSecondModelSelected={setSecondModelSelected}
+                confidenceThreshold={confidenceThreshold}
+                setConfidenceThreshold={setConfidenceThreshold}
+                filterEnabled={filterEnabled}
+                setFilterEnabled={setFilterEnabled}
+            />
 
             {/* Image Zoom Modal */}
             <ImageZoomModal
