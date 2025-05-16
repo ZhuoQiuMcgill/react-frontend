@@ -6,6 +6,7 @@ import { usePredictService } from '../services/predictService';
 import { createImageWithBoxes, createStatusMessage } from '../utils/imageUtils';
 import AIReport from '../components/AIReport';
 
+
 const PredictPage = () => {
     // State for models
     const [models, setModels] = useState([]);
