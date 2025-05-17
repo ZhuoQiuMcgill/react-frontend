@@ -9,11 +9,22 @@ rdqcc_yolo_frontend/
             predict/
                 assets/
                 components/
+                    AIReport.jsx
+                    ButtonContainer.jsx
+                    ConfigurationModal.jsx
+                    ImageDisplay.jsx
+                    ImageZoomModal.jsx
+                    PredictForm.jsx
+                    ResultsList.jsx
+                    StatusMessage.jsx
                 hooks/
                 services/
+                    predictService.js
                 types/
                 utils/
+                    imageUtils.js
                 views/
+                    PredictPage.jsx
                 index.js
                 routes.js
         shared/
@@ -22,7 +33,9 @@ rdqcc_yolo_frontend/
             components/
             config/
             hooks/
+                useAppConfig.js
             layouts/
+                MainLayout.jsx
             lib/
             providers/
             store/
@@ -41,4 +54,6 @@ rdqcc_yolo_frontend/
     index.html
     package-lock.json
     package.json
+    postcss.config.js
+    tailwind.config.js
     vite.config.js
