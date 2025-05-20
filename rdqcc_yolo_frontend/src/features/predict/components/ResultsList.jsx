@@ -1,8 +1,10 @@
 import {useState, useEffect} from 'react';
+import useIsMobile from '../../../shared/hooks/useIsMobile';
 
 const ResultsList = ({detections, onVisibilityChange, onAllVisibilityChange}) => {
     const [masterChecked, setMasterChecked] = useState(true);
     const [masterIndeterminate, setMasterIndeterminate] = useState(false);
+    const isMobile = useIsMobile();
 
     // Update master checkbox state when detections change
     useEffect(() => {
@@ -40,7 +42,7 @@ const ResultsList = ({detections, onVisibilityChange, onAllVisibilityChange}) =>
     };
 
     return (
-        <div className="h-full border border-neutral-gray rounded-lg bg-neutral-white shadow-card flex flex-col">
+        <div className={`${isMobile ? '' : 'h-full'} border border-neutral-gray rounded-lg bg-neutral-white shadow-card flex flex-col`}>
             <div
                 className="object-list-header flex justify-between items-center p-4 border-b border-neutral-gray bg-neutral-light-gray sticky top-0 z-10">
                 <h4 className="m-0 text-primary-dark-blue font-semibold flex items-baseline gap-2">
@@ -67,7 +69,7 @@ const ResultsList = ({detections, onVisibilityChange, onAllVisibilityChange}) =>
                 </div>
             </div>
 
-            <ul id="object-list" className="list-none p-6 pt-2 m-0 flex-grow overflow-y-auto">
+            <ul id="object-list" className={`list-none p-6 pt-2 m-0 flex-grow ${isMobile ? '' : 'overflow-y-auto'}`}>
                 {detections.length === 0 ? (
                     <li className="bg-transparent border-none justify-center p-8 italic text-neutral-dark-gray">
                         No objects detected yet.

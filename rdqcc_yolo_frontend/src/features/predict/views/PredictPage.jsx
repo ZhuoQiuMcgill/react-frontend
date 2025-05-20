@@ -410,7 +410,7 @@ const PredictPage = () => {
     };
 
     return (
-        <div className="w-full max-w-full overflow-hidden">
+        <div className="w-full max-w-full">
             {/* Page header */}
             <div className="mb-6">
                 <h2 className="text-primary-dark-blue text-2xl font-semibold pb-2 border-b-2 border-accent-pink mb-4">
@@ -418,10 +418,10 @@ const PredictPage = () => {
                 </h2>
             </div>
 
-            {/* Main content area */}
-            <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-240px)] min-h-[600px]">
+            {/* Main content area - Updated for mobile flexibility */}
+            <div className="flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-240px)] min-h-[300px] lg:min-h-[600px]">
                 {/* Left section - Image display and controls */}
-                <div className="lg:w-7/12 xl:w-8/12 flex flex-col gap-6 h-full">
+                <div className="lg:w-7/12 xl:w-8/12 flex flex-col gap-6 lg:h-full">
                     {/* Action buttons and status messages */}
                     <ActionBar
                         isLoading={isLoading}

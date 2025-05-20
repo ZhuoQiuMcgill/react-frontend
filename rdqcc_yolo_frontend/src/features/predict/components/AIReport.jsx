@@ -1,7 +1,9 @@
 import {useState, useEffect} from 'react';
+import useIsMobile from '../../../shared/hooks/useIsMobile';
 
 const AIReport = ({currentImage, predictions, reportContent}) => {
     const [error, setError] = useState(null);
+    const isMobile = useIsMobile();
 
     // Reset error when image or predictions change
     useEffect(() => {
@@ -178,11 +180,11 @@ const AIReport = ({currentImage, predictions, reportContent}) => {
     };
 
     return (
-        <div className="h-full flex flex-col overflow-hidden">
-            {/* Content area */}
-            <div className="p-6 flex-grow overflow-y-auto">
+        <div className={`${isMobile ? 'h-auto' : 'h-full'} flex flex-col ${isMobile ? '' : 'overflow-hidden'}`}>
+            {/* Content area - Dynamic based on device type */}
+            <div className={`p-6 ${isMobile ? '' : 'flex-grow overflow-y-auto'}`}>
                 {!reportContent ? (
-                    <div className="flex flex-col items-center justify-center h-full">
+                    <div className={`flex flex-col items-center justify-center ${isMobile ? 'py-8' : 'h-full'}`}>
                         {error && (
                             <p className="text-error mb-4 text-center font-medium">{error}</p>
                         )}

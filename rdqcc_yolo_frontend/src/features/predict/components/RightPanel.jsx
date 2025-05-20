@@ -4,6 +4,7 @@ import ConfigPanel from './ConfigPanel';
 
 /**
  * RightPanel component managing tabs for results, configuration, and AI report
+ * Uses separate styling for desktop and mobile
  */
 const RightPanel = ({
                         activeRightTab,
@@ -27,8 +28,7 @@ const RightPanel = ({
                         isAdvancedMode
                     }) => {
     return (
-        <div
-            className="lg:w-4/12 border border-neutral-gray rounded-lg shadow-card overflow-hidden bg-neutral-white flex flex-col h-full">
+        <div className="lg:w-4/12 border border-neutral-gray rounded-lg shadow-card overflow-hidden bg-neutral-white flex flex-col h-full">
             {/* Tabs header - Only show multiple tabs in advanced mode */}
             {isAdvancedMode ? (
                 <div className="tabs-header flex border-b border-neutral-gray bg-neutral-light-gray">
@@ -70,7 +70,7 @@ const RightPanel = ({
                 </div>
             )}
 
-            {/* Tab content - Updated for better mobile responsiveness */}
+            {/* Tab content */}
             <div className="flex-grow overflow-hidden">
                 {/* Results tab - Only visible in advanced mode */}
                 {isAdvancedMode && (
