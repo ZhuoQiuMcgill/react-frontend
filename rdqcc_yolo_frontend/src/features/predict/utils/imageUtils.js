@@ -57,7 +57,6 @@ export const createImageWithBoxes = (imgSrc, detections) => {
                             return;
                         }
 
-                        const score = (confidence * 100).toFixed(1);
                         const color = colors[colorIndex % colors.length];
                         colorIndex++;
 
@@ -66,13 +65,13 @@ export const createImageWithBoxes = (imgSrc, detections) => {
                         ctx.lineWidth = lineWidth;
                         ctx.strokeRect(x1, y1, width, height);
 
-                        // Reduce font size for smaller boxes to avoid text overflow
-                        const boxSizeRatio = Math.min(1, Math.sqrt((width * height) / (canvas.width * canvas.height)) * 10);
-                        const fontSize = Math.max(10, Math.round(20 * scaleFactor * boxSizeRatio));
+                        // Calculate font size with increased base size for better visibility
+                        const boxSizeRatio = Math.min(1.2, Math.sqrt((width * height) / (canvas.width * canvas.height)) * 12);
+                        const fontSize = Math.max(16, Math.round(30 * scaleFactor * boxSizeRatio));
 
-                        // Truncate class name if it's too long
-                        const truncatedClass = class_name.length > 20 ? class_name.substring(0, 18) + '...' : class_name;
-                        const text = `${truncatedClass} ${score}%`;
+                        // Remove parentheses content and get only the base class name
+                        const baseClassName = class_name.split('(')[0].trim();
+                        const text = baseClassName;
 
                         ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
 

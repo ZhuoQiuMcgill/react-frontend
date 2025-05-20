@@ -76,8 +76,6 @@ const ResultsList = ({detections, onVisibilityChange, onAllVisibilityChange}) =>
                     detections.map((detection, index) => {
                         const {class_name, confidence, visible} = detection;
                         const score = (confidence * 100).toFixed(1);
-                        const displayName = class_name.length > 20 ?
-                            `${class_name.substring(0, 18)}...` : class_name;
 
                         return (
                             <li
@@ -85,20 +83,20 @@ const ResultsList = ({detections, onVisibilityChange, onAllVisibilityChange}) =>
                                 className="bg-neutral-white border border-neutral-gray p-3 mb-2 rounded-md text-sm flex items-center transition-colors hover:bg-[#f8f9fa]"
                             >
                                 <div
-                                    className="item-details flex items-center flex-grow flex-wrap gap-2 overflow-hidden">
-                  <span
-                      className="stage-indicator final-result inline-block px-2 py-0.5 text-xs font-semibold rounded text-white bg-success">
-                    FINAL
-                  </span>
+                                    className="item-details flex items-center flex-grow gap-2 overflow-hidden">
+                                  <span
+                                      className="stage-indicator final-result inline-block px-2 py-0.5 text-xs font-semibold rounded text-white bg-success">
+                                    FINAL
+                                  </span>
                                     <span
-                                        className="font-medium text-primary-dark-blue whitespace-nowrap overflow-hidden text-ellipsis"
+                                        className="font-medium text-primary-dark-blue overflow-hidden text-ellipsis"
                                         title={class_name}>
-                    {index + 1}. {displayName}
-                  </span>
+                                    {index + 1}. {class_name}
+                                  </span>
                                     <span
                                         className="text-sm text-text-light bg-neutral-light-gray py-0.5 px-2 rounded border border-neutral-gray whitespace-nowrap ml-auto flex-shrink-0">
-                    {score}%
-                  </span>
+                                    {score}%
+                                  </span>
                                 </div>
                                 <div className="item-checkbox-wrapper ml-auto pl-3 flex-shrink-0 flex items-center">
                                     <input
