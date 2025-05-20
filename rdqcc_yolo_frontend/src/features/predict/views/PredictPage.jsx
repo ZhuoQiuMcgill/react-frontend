@@ -5,8 +5,26 @@ import {createImageWithBoxes} from '../utils/imageUtils';
 import ActionBar from '../components/ActionBar';
 import ImagePanel from '../components/ImagePanel';
 import RightPanel from '../components/RightPanel';
+import ModeToggle from '../../../shared/components/ModeToggle';
 
 const PredictPage = () => {
+    // Mode state (normal vs advanced)
+    const [isAdvancedMode, setIsAdvancedMode] = useState(() => {
+        // Check localStorage for saved preference
+        const saved = localStorage.getItem('defect-ai-mode');
+        return saved ? saved === 'advanced' : false; // Default to normal mode
+    });
+
+    // Save mode to localStorage when it changes
+    useEffect(() => {
+        localStorage.setItem('defect-ai-mode', isAdvancedMode ? 'advanced' : 'normal');
+    }, [isAdvancedMode]);
+
+    // Toggle between normal and advanced modes
+    const toggleMode = () => {
+        setIsAdvancedMode(prevMode => !prevMode);
+    };
+
     // State for models
     const [models, setModels] = useState([]);
     const [defaultModels, setDefaultModels] = useState(null);
@@ -34,7 +52,7 @@ const PredictPage = () => {
     const [statusMessage, setStatusMessage] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('final-result');
-    const [activeRightTab, setActiveRightTab] = useState('results');
+    const [activeRightTab, setActiveRightTab] = useState(isAdvancedMode ? 'results' : 'report');
 
     // Image zoom modal state
     const [zoomModalOpen, setZoomModalOpen] = useState(false);
@@ -48,6 +66,13 @@ const PredictPage = () => {
 
     const fileInputRef = useRef(null);
     const predictService = usePredictService();
+
+    // Reset active right tab when switching modes
+    useEffect(() => {
+        if (!isAdvancedMode) {
+            setActiveRightTab('report');
+        }
+    }, [isAdvancedMode]);
 
     // Fetch models on component mount
     useEffect(() => {
@@ -151,7 +176,13 @@ const PredictPage = () => {
 
         resetPredictionUI(false);
         setIsLoading(true);
-        setActiveRightTab('results');
+
+        // Set appropriate tab based on mode
+        if (isAdvancedMode) {
+            setActiveRightTab('results');
+        } else {
+            setActiveRightTab('report');
+        }
 
         try {
             // Create form data for API request
@@ -182,8 +213,8 @@ const PredictPage = () => {
                 });
                 setActiveTab('final-result');
 
-                // If AI report is available, switch to it
-                if (result.data.report_content) {
+                // If AI report is available, switch to it in normal mode
+                if (result.data.report_content && !isAdvancedMode) {
                     setActiveRightTab('report');
                 }
             } else {
@@ -389,7 +420,7 @@ const PredictPage = () => {
 
             {/* Main content area */}
             <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-240px)] min-h-[600px]">
-                {/* Left section - Image display and controls (65%) */}
+                {/* Left section - Image display and controls */}
                 <div className="lg:w-8/12 flex flex-col gap-6 h-full">
                     {/* Action buttons and status messages */}
                     <ActionBar
@@ -419,6 +450,7 @@ const PredictPage = () => {
                             currentImage={currentImage}
                             handleImageClick={handleImageClick}
                             handleFileInputClick={handleFileInputClick}
+                            isAdvancedMode={isAdvancedMode}
                         />
                     </div>
                 </div>
@@ -443,6 +475,7 @@ const PredictPage = () => {
                     handleAllDetectionsVisibilityChange={handleAllDetectionsVisibilityChange}
                     currentImage={currentImage}
                     reportContent={reportContent}
+                    isAdvancedMode={isAdvancedMode}
                 />
             </div>
 
@@ -451,6 +484,12 @@ const PredictPage = () => {
                 isOpen={zoomModalOpen}
                 imageUrl={zoomedImage}
                 onClose={() => setZoomModalOpen(false)}
+            />
+
+            {/* Mode Toggle */}
+            <ModeToggle
+                isAdvancedMode={isAdvancedMode}
+                onToggle={toggleMode}
             />
         </div>
     );
