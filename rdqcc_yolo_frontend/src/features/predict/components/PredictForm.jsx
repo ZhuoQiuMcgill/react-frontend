@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import {useState, useRef} from 'react';
 
 const PredictForm = ({
                          models,
@@ -13,7 +13,6 @@ const PredictForm = ({
     const [secondModelSelected, setSecondModelSelected] = useState('');
     const [confidenceThreshold, setConfidenceThreshold] = useState(0.5);
     const [filterEnabled, setFilterEnabled] = useState(false);
-    const [productCode, setProductCode] = useState('');
 
     const fileInputRef = useRef(null);
     const formRef = useRef(null);
@@ -37,7 +36,6 @@ const PredictForm = ({
         if (secondModelSelected) formData.append('second_model_filename', secondModelSelected);
         formData.append('first_confidence', confidenceThreshold);
         formData.append('filter', filterEnabled ? 'true' : 'false');
-        if (filterEnabled && productCode) formData.append('product_code', productCode);
 
         onSubmit(formData);
     };
@@ -59,7 +57,8 @@ const PredictForm = ({
 
             <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-6">
                 {/* Submit button at the top */}
-                <div className="pb-4 mb-2 border-b border-dashed border-neutral-gray flex flex-wrap justify-center gap-4">
+                <div
+                    className="pb-4 mb-2 border-b border-dashed border-neutral-gray flex flex-wrap justify-center gap-4">
                     <button
                         type="submit"
                         disabled={isLoading}
@@ -74,7 +73,8 @@ const PredictForm = ({
 
                     {isLoading && (
                         <div className="inline-flex items-center gap-2 font-medium text-text-light">
-                            <div className="w-7 h-7 border-4 border-neutral-gray border-l-accent-pink rounded-full animate-spin"></div>
+                            <div
+                                className="w-7 h-7 border-4 border-neutral-gray border-l-accent-pink rounded-full animate-spin"></div>
                             <span>Processing...</span>
                         </div>
                     )}
@@ -83,7 +83,8 @@ const PredictForm = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Image file input */}
                     <div className="flex flex-col gap-2">
-                        <label htmlFor={`image-file${isMobile ? '-mobile' : ''}`} className="font-medium text-text-light">
+                        <label htmlFor={`image-file${isMobile ? '-mobile' : ''}`}
+                               className="font-medium text-text-light">
                             Select Image File:
                         </label>
                         <input
@@ -105,7 +106,8 @@ const PredictForm = ({
 
                     {/* First stage model select */}
                     <div className="flex flex-col gap-2">
-                        <label htmlFor={`first-model-select${isMobile ? '-mobile' : ''}`} className="font-medium text-text-light">
+                        <label htmlFor={`first-model-select${isMobile ? '-mobile' : ''}`}
+                               className="font-medium text-text-light">
                             First Stage Model:
                         </label>
                         <select
@@ -136,7 +138,8 @@ const PredictForm = ({
 
                     {/* Second stage model select */}
                     <div className="flex flex-col gap-2">
-                        <label htmlFor={`second-model-select${isMobile ? '-mobile' : ''}`} className="font-medium text-text-light">
+                        <label htmlFor={`second-model-select${isMobile ? '-mobile' : ''}`}
+                               className="font-medium text-text-light">
                             Second Stage Model:
                         </label>
                         <select
@@ -167,7 +170,8 @@ const PredictForm = ({
 
                     {/* Confidence threshold */}
                     <div className="flex flex-col gap-2">
-                        <label htmlFor={`first-confidence${isMobile ? '-mobile' : ''}`} className="font-medium text-text-light">
+                        <label htmlFor={`first-confidence${isMobile ? '-mobile' : ''}`}
+                               className="font-medium text-text-light">
                             First Stage Confidence:
                         </label>
                         <input
@@ -188,7 +192,8 @@ const PredictForm = ({
 
                     {/* Filter checkbox */}
                     <div className="flex flex-col gap-2">
-                        <label htmlFor={`filter-enabled${isMobile ? '-mobile' : ''}`} className="font-medium text-text-light">
+                        <label htmlFor={`filter-enabled${isMobile ? '-mobile' : ''}`}
+                               className="font-medium text-text-light">
                             Enable Automatic Filtering:
                         </label>
                         <div className="flex items-center gap-3 mt-2">
@@ -204,27 +209,6 @@ const PredictForm = ({
               </span>
                         </div>
                     </div>
-
-                    {/* Product code input - hidden by default */}
-                    {filterEnabled && (
-                        <div className="flex flex-col gap-2">
-                            <label htmlFor={`product-code${isMobile ? '-mobile' : ''}`} className="font-medium text-text-light">
-                                Product Code:
-                            </label>
-                            <input
-                                type="text"
-                                id={`product-code${isMobile ? '-mobile' : ''}`}
-                                value={productCode}
-                                onChange={(e) => setProductCode(e.target.value)}
-                                placeholder="e.g. ABC"
-                                className="w-full p-3 border border-[#d8dde1] rounded-md bg-neutral-white text-text-default
-                         focus:border-primary-blue focus:outline-none focus:ring-3 focus:ring-primary-blue/25"
-                            />
-                            <small className="text-sm text-neutral-dark-gray">
-                                Only show detections matching this product code prefix
-                            </small>
-                        </div>
-                    )}
                 </div>
             </form>
         </section>

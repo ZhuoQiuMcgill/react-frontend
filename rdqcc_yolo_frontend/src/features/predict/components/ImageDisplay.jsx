@@ -1,10 +1,10 @@
 import {useState} from 'react';
 
 const ImageDisplay = ({images, activeTab, setActiveTab, onImageClick}) => {
-    // Simplified tabs configuration - only final result and first stage
+    // Updated tabs configuration - renamed from "Final Result" to "Defect" and "First Stage" to "Product"
     const tabs = [
-        {id: 'final-result', label: 'Final Result', imageKey: 'finalResult', title: 'Final Detection Result:'},
-        {id: 'first-stage', label: 'First Stage', imageKey: 'firstStage', title: 'First Stage Detections:'},
+        {id: 'final-result', label: 'Defect', imageKey: 'finalResult', title: 'Defect Detection Result:'},
+        {id: 'first-stage', label: 'Product', imageKey: 'firstStage', title: 'Product Detection:'},
     ];
 
     // Handle tab click

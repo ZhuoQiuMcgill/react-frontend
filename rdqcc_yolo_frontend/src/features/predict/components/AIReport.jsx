@@ -1,9 +1,15 @@
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 
 const AIReport = ({currentImage, predictions}) => {
     const [isLoading, setIsLoading] = useState(false);
     const [report, setReport] = useState(null);
     const [error, setError] = useState(null);
+
+    // Reset report when image or predictions change
+    useEffect(() => {
+        setReport(null);
+        setError(null);
+    }, [currentImage, predictions.finalDetections]);
 
     const generateReport = async () => {
         if (!currentImage || !predictions.finalDetections.length) {
