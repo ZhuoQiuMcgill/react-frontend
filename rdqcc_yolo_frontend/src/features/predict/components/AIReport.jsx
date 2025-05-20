@@ -1,79 +1,12 @@
-import {useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 
-const AIReport = ({currentImage, predictions}) => {
-    const [isLoading, setIsLoading] = useState(false);
-    const [report, setReport] = useState(null);
+const AIReport = ({ currentImage, predictions, reportContent }) => {
     const [error, setError] = useState(null);
 
-    // Reset report when image or predictions change
+    // Reset error when image or predictions change
     useEffect(() => {
-        setReport(null);
         setError(null);
     }, [currentImage, predictions.finalDetections]);
-
-    const generateReport = async () => {
-        if (!currentImage || !predictions.finalDetections.length) {
-            setError("No image or detections available to generate report");
-            return;
-        }
-
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            // This is where you would make an API call to the backend
-            // For now, we'll simulate a response after a delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            // Placeholder for actual implementation
-            // const response = await fetch('/api/generate-report', {
-            //   method: 'POST',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify({
-            //     detections: predictions.finalDetections,
-            //     totalObjects: predictions.finalDetections.length
-            //   })
-            // });
-
-            // if (!response.ok) throw new Error('Failed to generate report');
-            // const data = await response.json();
-            // setReport(data.report);
-
-            // Simulated response
-            setReport(`# Detection Analysis Report\n\n## Summary\n\n* Total objects detected: ${predictions.finalDetections.length}\n* Main categories detected: ${getCategorySummary(predictions.finalDetections)}\n\n## Detailed Findings\n\n${getDetailedFindings(predictions.finalDetections)}\n\n## Recommendations\n\nBased on the detection results, we recommend further inspection of detected objects with confidence below 70%.`);
-
-        } catch (error) {
-            console.error("Error generating report:", error);
-            setError(error.message || "Failed to generate AI report");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // Helper function to get category summary
-    const getCategorySummary = (detections) => {
-        const categories = {};
-        detections.forEach(detection => {
-            const category = detection.class_name;
-            if (categories[category]) {
-                categories[category]++;
-            } else {
-                categories[category] = 1;
-            }
-        });
-
-        return Object.entries(categories)
-            .map(([name, count]) => `${name} (${count})`)
-            .join(', ');
-    };
-
-    // Helper function to generate detailed findings
-    const getDetailedFindings = (detections) => {
-        return detections.map((detection, index) => {
-            const confidence = (detection.confidence * 100).toFixed(1);
-            return `${index + 1}. **${detection.class_name}** detected with ${confidence}% confidence`;
-        }).join('\n');
-    };
 
     // Function to render markdown content
     const renderMarkdown = (markdown) => {
@@ -92,7 +25,7 @@ const AIReport = ({currentImage, predictions}) => {
                         return <h3 key={index} className="text-lg font-medium mt-3 mb-1">{line.substring(4)}</h3>;
                     }
                     // Handle lists
-                    else if (line.startsWith('* ')) {
+                    else if (line.startsWith('* ') || line.startsWith('- ')) {
                         return <li key={index} className="ml-5 mb-1">{line.substring(2)}</li>;
                     }
                     // Handle numbered lists
@@ -125,47 +58,36 @@ const AIReport = ({currentImage, predictions}) => {
 
     return (
         <div className="h-full border border-neutral-gray rounded-lg bg-neutral-white shadow-card flex flex-col overflow-hidden">
-            <div
-                className="ai-report-header flex justify-between items-center p-4 border-b border-neutral-gray bg-neutral-light-gray sticky top-0 z-10">
+            <div className="ai-report-header flex justify-between items-center p-4 border-b border-neutral-gray bg-neutral-light-gray sticky top-0 z-10">
                 <h4 className="m-0 text-primary-dark-blue font-semibold">AI Report</h4>
             </div>
 
             <div className="p-6 flex-grow overflow-y-auto max-h-[calc(100vh-250px)]">
-                {!report ? (
+                {!reportContent ? (
                     <div className="flex flex-col items-center justify-center h-full">
                         {error && (
                             <p className="text-error mb-4 text-center">{error}</p>
                         )}
-                        <button
-                            onClick={generateReport}
-                            disabled={isLoading || !currentImage}
-                            className="px-6 py-3 bg-gradient-primary text-neutral-white font-medium rounded-full
-                       tracking-wide shadow-button hover:filter hover:brightness-110
-                       disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:filter-none
-                       transition transform hover:-translate-y-0.5"
-                        >
-                            {isLoading ? (
-                                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg"
-                       fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                            strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Generating Report...
-                </span>
-                            ) : "Generate AI Report"}
-                        </button>
-                        {!currentImage && (
-                            <p className="text-neutral-dark-gray mt-4 text-sm text-center">
-                                Upload and process an image first to generate a report
+
+                        <div className="text-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mb-4 text-neutral-dark-gray/50 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p className="text-neutral-dark-gray text-sm">
+                                {currentImage && predictions.finalDetections.length > 0
+                                    ? "No AI report available for current detections."
+                                    : "Process an image to view the AI analysis report"}
                             </p>
-                        )}
+                            {(!currentImage || predictions.finalDetections.length === 0) && (
+                                <p className="text-neutral-dark-gray mt-2 text-xs">
+                                    Reports are automatically generated when defects are detected
+                                </p>
+                            )}
+                        </div>
                     </div>
                 ) : (
                     <div className="report-content">
-                        {renderMarkdown(report)}
+                        {renderMarkdown(reportContent)}
                     </div>
                 )}
             </div>

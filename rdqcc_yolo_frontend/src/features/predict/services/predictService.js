@@ -58,7 +58,19 @@ export const usePredictService = () => {
             const result = await response.json();
 
             if (response.ok && result.status === 'success') {
-                return { success: true, data: result };
+                // Process the response, preserving all fields including report_content
+                return {
+                    success: true,
+                    data: {
+                        ...result,
+                        // Ensure the first_stage, second_stage, and final_detections are available
+                        first_stage: result.first_stage || [],
+                        second_stage: result.second_stage || [],
+                        final_detections: result.final_detections || [],
+                        // Include report_content if available
+                        report_content: result.report_content || null
+                    }
+                };
             } else {
                 throw new Error(result.message || `Inference failed (HTTP ${response.status})`);
             }

@@ -27,6 +27,9 @@ const PredictPage = () => {
         finalDetections: []
     });
 
+    // State for AI report
+    const [reportContent, setReportContent] = useState(null);
+
     // UI state
     const [statusMessage, setStatusMessage] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -115,6 +118,7 @@ const PredictPage = () => {
     // Reset the prediction UI elements
     const resetPredictionUI = (clearData = false) => {
         setStatusMessage(null);
+        setReportContent(null);
 
         if (clearData) {
             setPredictions({
@@ -177,6 +181,11 @@ const PredictPage = () => {
                     message: 'Two-stage inference successful!'
                 });
                 setActiveTab('final-result');
+
+                // If AI report is available, switch to it
+                if (result.data.report_content) {
+                    setActiveRightTab('report');
+                }
             } else {
                 throw new Error(result.error || 'Inference failed');
             }
@@ -239,6 +248,13 @@ const PredictPage = () => {
                     visible: true
                 });
             });
+        }
+
+        // Store the AI report content if available
+        if (result.report_content) {
+            setReportContent(result.report_content);
+        } else {
+            setReportContent(null);
         }
 
         // Update the state with the processed results
@@ -724,6 +740,7 @@ const PredictPage = () => {
                             <AIReport
                                 currentImage={currentImage}
                                 predictions={predictions}
+                                reportContent={reportContent}
                             />
                         </div>
                     </div>
