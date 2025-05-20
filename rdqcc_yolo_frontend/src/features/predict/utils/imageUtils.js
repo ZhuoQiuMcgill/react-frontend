@@ -1,135 +1,112 @@
+// src/features/predict/utils/imageUtils.js
+
 /**
- * Creates an image with detection boxes drawn on it
- * @param {Image|string} imgSrc - The source image or URL
- * @param {Array} detections - The detection objects with box coordinates
- * @returns {Promise<string>} - Promise resolving to data URL of the image with boxes
+ * Compresses an image file.
+ * This function attempts to resize the image if it exceeds maxWidthOrHeight
+ * and then compresses it to a JPEG format with a specified quality.
+ *
+ * @param {File} imageFile The image file to compress.
+ * @param {object} options Compression options.
+ * @param {number} [options.maxSizeMB=1] - The target maximum size in megabytes. (Note: current basic implementation doesn't strictly enforce this by re-compressing)
+ * @param {number} [options.maxWidthOrHeight=1920] - The maximum width or height for the image.
+ * @param {number} [options.quality=0.7] - The JPEG compression quality (0 to 1).
+ * @returns {Promise<File>} A promise that resolves with the compressed image file.
  */
-export const createImageWithBoxes = (imgSrc, detections) => {
+export const compressImage = async (imageFile, options = {}) => {
+    console.log('Original image:', imageFile.name, 'Size:', imageFile.size / 1024 / 1024, 'MB');
+    // Default options
+    const { maxSizeMB = 1, maxWidthOrHeight = 1920, quality = 0.7 } = options;
+
     return new Promise((resolve, reject) => {
-        const img = imgSrc instanceof Image ? imgSrc : new Image();
+        const image = new Image();
+        const reader = new FileReader();
 
-        const processImage = () => {
-            // Add a small delay to ensure dimensions are stable in DOM
-            setTimeout(() => {
-                if (!img.naturalWidth || !img.naturalHeight) {
-                    console.warn("Image has zero dimensions after short delay, rejecting.");
-                    // Resolve with the original image source if drawing fails
-                    // This prevents breaking the chain if the base image is valid but drawing context fails
-                    if (typeof imgSrc === 'string' && imgSrc.startsWith('data:image')) {
-                        resolve(imgSrc);
-                    } else {
-                        reject(new Error("Image has zero dimensions"));
-                    }
-                    return;
-                }
-                const canvas = document.createElement('canvas');
-                canvas.width = img.naturalWidth;
-                canvas.height = img.naturalHeight;
-                const ctx = canvas.getContext('2d');
-
-                ctx.drawImage(img, 0, 0);
-
-                const maxDimension = Math.max(img.naturalWidth, img.naturalHeight);
-                const scaleFactor = Math.max(0.001, maxDimension / 1000);
-
-                // Gracefully handle empty or invalid detections array
-                if (detections && Array.isArray(detections) && detections.length > 0) {
-                    const colors = ['#dfbee8', '#7ec3ed', '#616ca8', '#8180b4', '#c8a2c8', '#a0d2eb', '#d43f3a', '#46b8da', '#F0AD4E', '#4cae4c'];
-                    let colorIndex = 0;
-
-                    detections.forEach((pred) => {
-                        // Ensure only visible boxes are drawn if visibility flag exists
-                        if (!pred || pred.visible === false) return;
-
-                        const {class_name, confidence, box} = pred;
-
-                        if (!box || !Array.isArray(box) || box.length !== 4 || box.some(coord => isNaN(coord) || coord === null)) {
-                            console.warn("Skipping invalid box data:", box);
-                            return;
-                        }
-
-                        const [x1, y1, x2, y2] = box.map(Number);
-                        const width = x2 - x1;
-                        const height = y2 - y1;
-
-                        if (width <= 0 || height <= 0) {
-                            console.warn("Skipping box with zero area:", box);
-                            return;
-                        }
-
-                        const color = colors[colorIndex % colors.length];
-                        colorIndex++;
-
-                        const lineWidth = Math.max(2, Math.round(4 * scaleFactor));
-                        ctx.strokeStyle = color;
-                        ctx.lineWidth = lineWidth;
-                        ctx.strokeRect(x1, y1, width, height);
-
-                        // Calculate font size with increased base size for better visibility
-                        const boxSizeRatio = Math.min(1.2, Math.sqrt((width * height) / (canvas.width * canvas.height)) * 12);
-                        const fontSize = Math.max(16, Math.round(30 * scaleFactor * boxSizeRatio));
-
-                        // Remove parentheses content and get only the base class name
-                        const baseClassName = class_name.split('(')[0].trim();
-                        const text = baseClassName;
-
-                        ctx.font = `bold ${fontSize}px 'Segoe UI', sans-serif`;
-
-                        const textMetrics = ctx.measureText(text);
-                        const textWidth = textMetrics.width;
-                        const textHeight = fontSize * 1.2;
-
-                        const padding = Math.max(4, Math.round(8 * scaleFactor));
-                        const rectX = x1;
-                        const rectY = Math.max(0, y1 - textHeight);
-                        const rectHeight = textHeight;
-                        const rectWidth = textWidth + padding;
-
-                        ctx.fillStyle = color;
-                        ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
-
-                        const xOffset = Math.max(2, Math.round(4 * scaleFactor));
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillText(text, rectX + xOffset, rectY + fontSize);
-                    });
-                } // End if detections exist
-
-                resolve(canvas.toDataURL('image/jpeg'));
-            }, 50); // 50ms delay
+        reader.onload = (e) => {
+            if (typeof e.target.result !== 'string') {
+                return reject(new Error('FileReader did not return a string result.'));
+            }
+            image.src = e.target.result;
         };
 
-        if (!(imgSrc instanceof Image)) {
-            img.onload = processImage;
-            img.onerror = (err) => {
-                console.error(`Failed to load image source: ${typeof imgSrc === 'string' ? imgSrc.substring(0, 100) : '[Image Object]'}...`);
-                reject(new Error(`Failed to load image source. Error: ${err}`));
-            };
-            img.src = imgSrc;
-        } else {
-            if (img.complete && img.naturalWidth > 0) {
-                processImage();
-            } else if (img.naturalWidth === 0 && img.complete) {
-                reject(new Error("Provided image object has zero width"));
-            } else {
-                img.onload = processImage;
-                img.onerror = (err) => {
-                    console.error(`Provided image object failed to load.`);
-                    reject(new Error(`Provided image object failed to load. Error: ${err}`));
-                };
+        reader.onerror = (err) => {
+            console.error('FileReader error:', err);
+            reject(new Error('FileReader failed to read the image.'));
+        };
+
+        image.onload = () => {
+            let { width, height } = image;
+            let scaleFactor = 1;
+
+            // Calculate scaling factor to fit within maxWidthOrHeight
+            if (width > maxWidthOrHeight || height > maxWidthOrHeight) {
+                if (width > height) {
+                    scaleFactor = maxWidthOrHeight / width;
+                } else {
+                    scaleFactor = maxWidthOrHeight / height;
+                }
+                width = Math.round(width * scaleFactor);
+                height = Math.round(height * scaleFactor);
             }
-        }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+
+            if (!ctx) {
+                return reject(new Error('Failed to get 2D context from canvas.'));
+            }
+            ctx.drawImage(image, 0, 0, width, height);
+
+            canvas.toBlob(
+                (blob) => {
+                    if (blob) {
+                        console.log('Compressed image type:', blob.type, 'New size:', blob.size / 1024 / 1024, 'MB');
+                        if (blob.size / 1024 / 1024 > maxSizeMB) {
+                            console.warn(
+                                `Image compression resulted in ${blob.size / 1024 / 1024}MB, which is larger than the target ${maxSizeMB}MB. ` +
+                                `Consider using a more advanced compression library or adjusting quality/dimensions further if strict size limits are required.`
+                            );
+                        }
+                        const compressedFile = new File([blob], imageFile.name, {
+                            type: 'image/jpeg', // Output as JPEG for compression
+                            lastModified: Date.now(),
+                        });
+                        resolve(compressedFile);
+                    } else {
+                        console.error('Canvas toBlob conversion failed, blob is null.');
+                        reject(new Error('Canvas to Blob conversion failed.'));
+                    }
+                },
+                'image/jpeg', // Specify JPEG for compression
+                quality       // Compression quality (0 to 1)
+            );
+        };
+
+        image.onerror = (errEvent) => {
+            // errEvent might not be a standard Error object, so stringify or pick properties
+            let errorMessage = 'Image loading failed.';
+            if (typeof errEvent === 'string') {
+                errorMessage += ` Details: ${errEvent}`;
+            } else if (errEvent && typeof errEvent === 'object' && errEvent.type) {
+                errorMessage += ` Event type: ${errEvent.type}`;
+            }
+            console.error(errorMessage, errEvent);
+            reject(new Error(errorMessage));
+        };
+
+        // Start the process by reading the image file
+        reader.readAsDataURL(imageFile);
     });
 };
 
-/**
- * Shows a status message.
- * @param {string} message - The message text.
- * @param {'success' | 'error' | 'info'} type - The type of message.
- * @returns {Object} - The message object
- */
-export const createStatusMessage = (message, type) => {
-    return {
-        message,
-        type
-    };
-};
+// You can add other image utility functions here and export them as needed.
+// For example:
+// export const anotherImageUtil = (imageData) => {
+//   // ... implementation ...
+//   return processedData;
+// };
+
+// export const yetAnotherUtil = () => {
+//   // ...
+// };

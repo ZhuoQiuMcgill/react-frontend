@@ -2,35 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  .text-shadow {
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
-  }
-}
-
-@layer components {
-  @keyframes zoom {
-    from {
-      transform: scale(0.1);
-    }
-    to {
-      transform: scale(1);
-    }
-  }
-
-  .animate-zoom {
-    animation: zoom 0.3s;
-  }
-}
-
-:root {
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/* Ensure html, body, and root take full height for h-screen to work reliably */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  /* Consider adding overflow-x: hidden; to html/body if you ever face horizontal scroll issues globally */
+  /* overflow-x: hidden; */
 }
 
 body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
+  @apply bg-gray-100 dark:bg-gray-950 text-gray-900 dark:text-gray-100;
+  font-family: 'Inter', sans-serif; /* A nice default font */
 }
+
+/* Custom scrollbar styles (optional, for better aesthetics) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px; /* Width of the scrollbar */
+  height: 8px; /* Height of the scrollbar (for horizontal ones) */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent; /* Or a very light gray, e.g., #f1f1f1 */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #c1c1c1; /* Scrollbar color */
+  border-radius: 10px;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #555; /* Scrollbar color for dark mode */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1; /* Scrollbar color on hover */
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #777; /* Scrollbar color on hover for dark mode */
+}
+
+/* For Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 transparent; /* thumb and track */
+}
+.dark .custom-scrollbar {
+  scrollbar-color: #555 transparent; /* thumb and track for dark mode */
+}
+
+/* Additional utility or component-level styles can go here */
+.prose {
+  /* Ensure prose doesn't set a max-width that conflicts if not overridden by max-w-none */
+  /* max-width: 65ch; /* Default prose max-width, often overridden with max-w-none where needed */
+}
+
+/* Example of a subtle focus ring, Tailwind 3.0+ has this built-in better */
+/*
+@layer components {
+  .focusable {
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+  }
+}
+*/
