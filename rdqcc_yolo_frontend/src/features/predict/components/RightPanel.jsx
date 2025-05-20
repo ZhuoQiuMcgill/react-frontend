@@ -1,56 +1,119 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import ResultsList from './ResultsList';
 import AIReport from './AIReport';
-import StatusMessage from './StatusMessage'; // Assuming this component is for loading/error/empty states
+import ConfigPanel from './ConfigPanel';
 
-const RightPanel = ({ report, isLoading, error }) => {
-    if (isLoading) {
-        return (
-            <div className="w-full h-full flex items-center justify-center p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg">
-                <StatusMessage message="Generating AI Report..." />
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="w-full h-full flex items-center justify-center p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg">
-                <StatusMessage message={`Error: ${error}`} isError={true} />
-            </div>
-        );
-    }
-
-    if (!report || Object.keys(report).length === 0) {
-        return (
-            <div className="w-full h-full flex items-center justify-center p-6 text-center bg-white dark:bg-gray-800 shadow-lg rounded-lg">
-                <StatusMessage message="Upload an image and click 'Predict' to see the AI report here." />
-            </div>
-        );
-    }
-
+/**
+ * RightPanel component managing tabs for results, configuration, and AI report
+ */
+const RightPanel = ({
+                        activeRightTab,
+                        setActiveRightTab,
+                        predictions,
+                        models,
+                        defaultModels,
+                        modelsFetched,
+                        firstModelSelected,
+                        setFirstModelSelected,
+                        secondModelSelected,
+                        setSecondModelSelected,
+                        confidenceThreshold,
+                        setConfidenceThreshold,
+                        filterEnabled,
+                        setFilterEnabled,
+                        handleDetectionVisibilityChange,
+                        handleAllDetectionsVisibilityChange,
+                        currentImage,
+                        reportContent,
+                        isAdvancedMode
+                    }) => {
     return (
-        // Main container for RightPanel:
-        // - Takes full width and height of its parent (the flex-1 container in PredictPage)
-        // - Flex column layout: Title at the top, AIReport container takes remaining space
-        <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-4 sm:p-6 w-full h-full flex flex-col">
-            <h2 className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4 text-gray-800 dark:text-white border-b pb-2 dark:border-gray-700">
-                AI Report Analysis
-            </h2>
-            {/* Container for AIReport:
-          - flex-grow: Allows this div to expand and fill available vertical space
-          - overflow-hidden: Prevents this container from scrolling; AIReport will handle its own scroll
-      */}
-            <div className="flex-grow overflow-hidden relative"> {/* Added relative for potential absolute positioned elements inside AIReport if any */}
-                <AIReport reportData={report} />
+        <div
+            className="lg:w-4/12 border border-neutral-gray rounded-lg shadow-card overflow-hidden bg-neutral-white flex flex-col h-full">
+            {/* Tabs header - Only show multiple tabs in advanced mode */}
+            {isAdvancedMode ? (
+                <div className="tabs-header flex border-b border-neutral-gray bg-neutral-light-gray">
+                    <button
+                        className={`flex-1 py-3 px-4 bg-transparent border-none border-b-3 font-medium transition-all
+                        ${activeRightTab === 'results'
+                            ? 'border-b-accent-pink text-primary-dark-blue bg-neutral-white'
+                            : 'border-b-transparent text-text-light hover:bg-black/[0.03] hover:text-primary-dark-blue'
+                        }`}
+                        onClick={() => setActiveRightTab('results')}
+                    >
+                        Results
+                    </button>
+                    <button
+                        className={`flex-1 py-3 px-4 bg-transparent border-none border-b-3 font-medium transition-all
+                        ${activeRightTab === 'config'
+                            ? 'border-b-accent-pink text-primary-dark-blue bg-neutral-white'
+                            : 'border-b-transparent text-text-light hover:bg-black/[0.03] hover:text-primary-dark-blue'
+                        }`}
+                        onClick={() => setActiveRightTab('config')}
+                    >
+                        Configuration
+                    </button>
+                    <button
+                        className={`flex-1 py-3 px-4 bg-transparent border-none border-b-3 font-medium transition-all
+                        ${activeRightTab === 'report'
+                            ? 'border-b-accent-pink text-primary-dark-blue bg-neutral-white'
+                            : 'border-b-transparent text-text-light hover:bg-black/[0.03] hover:text-primary-dark-blue'
+                        }`}
+                        onClick={() => setActiveRightTab('report')}
+                    >
+                        AI Report
+                    </button>
+                </div>
+            ) : (
+                /* Simple header for normal mode - always show AI Report */
+                <div className="tabs-header border-b border-neutral-gray bg-neutral-light-gray py-3 px-6">
+                    <h3 className="text-primary-dark-blue font-medium m-0">AI Report</h3>
+                </div>
+            )}
+
+            {/* Tab content - Updated for better mobile responsiveness */}
+            <div className="flex-grow overflow-hidden">
+                {/* Results tab - Only visible in advanced mode */}
+                {isAdvancedMode && (
+                    <div className={`h-full ${activeRightTab === 'results' ? 'block' : 'hidden'}`}>
+                        <ResultsList
+                            detections={predictions.finalDetections}
+                            onVisibilityChange={handleDetectionVisibilityChange}
+                            onAllVisibilityChange={handleAllDetectionsVisibilityChange}
+                        />
+                    </div>
+                )}
+
+                {/* Configuration tab - Only visible in advanced mode */}
+                {isAdvancedMode && (
+                    <div className={`h-full ${activeRightTab === 'config' ? 'block' : 'hidden'}`}>
+                        <ConfigPanel
+                            models={models}
+                            defaultModels={defaultModels}
+                            modelsFetched={modelsFetched}
+                            firstModelSelected={firstModelSelected}
+                            setFirstModelSelected={setFirstModelSelected}
+                            secondModelSelected={secondModelSelected}
+                            setSecondModelSelected={setSecondModelSelected}
+                            confidenceThreshold={confidenceThreshold}
+                            setConfidenceThreshold={setConfidenceThreshold}
+                            filterEnabled={filterEnabled}
+                            setFilterEnabled={setFilterEnabled}
+                        />
+                    </div>
+                )}
+
+                {/* AI Report tab - Always visible, but conditional on the activeRightTab in advanced mode */}
+                <div
+                    className={`h-full ${isAdvancedMode ? (activeRightTab === 'report' ? 'block' : 'hidden') : 'block'}`}>
+                    <AIReport
+                        currentImage={currentImage}
+                        predictions={predictions}
+                        reportContent={reportContent}
+                    />
+                </div>
             </div>
         </div>
     );
-};
-
-RightPanel.propTypes = {
-    report: PropTypes.object,
-    isLoading: PropTypes.bool,
-    error: PropTypes.string,
 };
 
 export default RightPanel;

@@ -1,132 +1,496 @@
-import React, { useState, useCallback } from 'react';
-import ConfigPanel from '../components/ConfigPanel';
+import {useState, useEffect, useRef} from 'react';
+import ImageZoomModal from '../components/ImageZoomModal';
+import {usePredictService} from '../services/predictService';
+import {createImageWithBoxes} from '../utils/imageUtils';
+import ActionBar from '../components/ActionBar';
 import ImagePanel from '../components/ImagePanel';
 import RightPanel from '../components/RightPanel';
-import ConfigurationModal from '../components/ConfigurationModal';
-import ImageZoomModal from '../components/ImageZoomModal';
-import { predictImage } from '../services/predictService';
-import { compressImage } from '../utils/imageUtils';
-import { useAppConfig } from '../../../shared/hooks/useAppConfig'; // Corrected path
+import ModeToggle from '../../../shared/components/ModeToggle';
 
 const PredictPage = () => {
-    const [image, setImage] = useState(null);
-    const [preview, setPreview] = useState(null);
-    const [report, setReport] = useState(null);
+    // Mode state (normal vs advanced)
+    const [isAdvancedMode, setIsAdvancedMode] = useState(() => {
+        // Check localStorage for saved preference
+        const saved = localStorage.getItem('defect-ai-mode');
+        return saved ? saved === 'advanced' : false; // Default to normal mode
+    });
+
+    // Save mode to localStorage when it changes
+    useEffect(() => {
+        localStorage.setItem('defect-ai-mode', isAdvancedMode ? 'advanced' : 'normal');
+    }, [isAdvancedMode]);
+
+    // Toggle between normal and advanced modes
+    const toggleMode = () => {
+        setIsAdvancedMode(prevMode => !prevMode);
+    };
+
+    // State for models
+    const [models, setModels] = useState([]);
+    const [defaultModels, setDefaultModels] = useState(null);
+    const [modelsFetched, setModelsFetched] = useState(false);
+
+    // Configuration state
+    const [firstModelSelected, setFirstModelSelected] = useState('');
+    const [secondModelSelected, setSecondModelSelected] = useState('');
+    const [confidenceThreshold, setConfidenceThreshold] = useState(0.01);
+    const [filterEnabled, setFilterEnabled] = useState(true);
+
+    // State for images and predictions
+    const [currentImage, setCurrentImage] = useState(null);
+    const [fileInputFile, setFileInputFile] = useState(null);
+    const [predictions, setPredictions] = useState({
+        firstStage: [],
+        secondStage: [],
+        finalDetections: []
+    });
+
+    // State for AI report
+    const [reportContent, setReportContent] = useState(null);
+
+    // UI state
+    const [statusMessage, setStatusMessage] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-    const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('final-result');
+    const [activeRightTab, setActiveRightTab] = useState(isAdvancedMode ? 'results' : 'report');
 
-    const { appConfig, setAppConfig } = useAppConfig();
+    // Image zoom modal state
+    const [zoomModalOpen, setZoomModalOpen] = useState(false);
+    const [zoomedImage, setZoomedImage] = useState('');
 
-    const handleImageChange = useCallback((e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setImage(file);
-            setPreview(URL.createObjectURL(file));
-            setReport(null); // Clear previous report
-            setError(null); // Clear previous error
+    // State for result images
+    const [resultImages, setResultImages] = useState({
+        finalResult: '',
+        firstStage: '',
+    });
+
+    const fileInputRef = useRef(null);
+    const predictService = usePredictService();
+
+    // Reset active right tab when switching modes
+    useEffect(() => {
+        if (!isAdvancedMode) {
+            setActiveRightTab('report');
         }
+    }, [isAdvancedMode]);
+
+    // Fetch models on component mount
+    useEffect(() => {
+        const fetchModels = async () => {
+            const result = await predictService.fetchTwoStageModels();
+            if (result.success) {
+                setModels(result.models);
+                setDefaultModels(result.defaults);
+            } else {
+                setStatusMessage({
+                    type: 'error',
+                    message: result.error || 'Failed to load models'
+                });
+            }
+            setModelsFetched(true);
+        };
+
+        fetchModels();
     }, []);
 
-    const handlePredict = useCallback(async () => {
-        if (!image) {
-            setError('Please upload an image first.');
+    // Handle image preview when a file is selected
+    const handleImageSelect = (file) => {
+        if (!file) {
+            setCurrentImage(null);
+            setFileInputFile(null);
+            resetPredictionUI(true);
             return;
         }
+
+        setFileInputFile(file);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setCurrentImage(e.target.result);
+            resetPredictionUI(true);
+            setResultImages(prev => ({
+                ...prev,
+                finalResult: e.target.result
+            }));
+            setActiveTab('final-result');
+        };
+
+        reader.onerror = () => {
+            setStatusMessage({
+                type: 'error',
+                message: 'Error reading file.'
+            });
+            setCurrentImage(null);
+            resetPredictionUI(true);
+        };
+
+        reader.readAsDataURL(file);
+    };
+
+    // Handle file input click
+    const handleFileInputClick = () => {
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
+
+    // Handle file change
+    const handleFileChange = (e) => {
+        if (e.target.files.length > 0) {
+            handleImageSelect(e.target.files[0]);
+        }
+    };
+
+    // Reset the prediction UI elements
+    const resetPredictionUI = (clearData = false) => {
+        setStatusMessage(null);
+        setReportContent(null);
+
+        if (clearData) {
+            setPredictions({
+                firstStage: [],
+                secondStage: [],
+                finalDetections: []
+            });
+            setResultImages({
+                finalResult: currentImage || '',
+                firstStage: '',
+            });
+        } else {
+            // Keep the current image in final result view
+            setResultImages(prev => ({
+                ...prev,
+                finalResult: currentImage || ''
+            }));
+        }
+    };
+
+    // Handle form submission for prediction
+    const handleStartInference = async () => {
+        if (!currentImage) {
+            setStatusMessage({
+                type: 'error',
+                message: 'Please select and upload an image file first.'
+            });
+            return;
+        }
+
+        resetPredictionUI(false);
         setIsLoading(true);
-        setError(null);
-        setReport(null);
+
+        // Set appropriate tab based on mode
+        if (isAdvancedMode) {
+            setActiveRightTab('results');
+        } else {
+            setActiveRightTab('report');
+        }
 
         try {
-            const compressedImage = await compressImage(image);
-            const reader = new FileReader();
-            reader.readAsDataURL(compressedImage);
-            reader.onloadend = async () => {
-                const base64Image = reader.result.split(',')[1];
-                const prediction = await predictImage(base64Image, appConfig.apiKey, appConfig.modelEndpoint);
-                setReport(prediction);
-            };
-            reader.onerror = () => {
-                setError('Failed to read image file.');
-                setIsLoading(false);
-            };
-        } catch (err) {
-            setError(err.message || 'Prediction failed.');
-        } finally {
-            // setIsLoading(false); // Moved inside onloadend or onerror for FileReader
-        }
-    }, [image, appConfig.apiKey, appConfig.modelEndpoint]);
+            // Create form data for API request
+            const formData = new FormData();
 
-    // Effect to revoke object URL
-    React.useEffect(() => {
-        return () => {
-            if (preview) {
-                URL.revokeObjectURL(preview);
+            // Add the image file - if we have the File object use it, otherwise fetch from data URL
+            if (fileInputFile) {
+                formData.append('image', fileInputFile);
+            } else {
+                // Convert data URL to file
+                const blob = await fetch(currentImage).then(r => r.blob());
+                formData.append('image', blob, 'image.jpg');
             }
-        };
-    }, [preview]);
 
+            // Add model configurations
+            if (firstModelSelected) formData.append('first_model_filename', firstModelSelected);
+            if (secondModelSelected) formData.append('second_model_filename', secondModelSelected);
+            formData.append('first_confidence', confidenceThreshold);
+            formData.append('filter', filterEnabled ? 'true' : 'false');
+
+            const result = await predictService.processPrediction(formData);
+
+            if (result.success) {
+                await processTwoStageResults(result.data);
+                setStatusMessage({
+                    type: 'success',
+                    message: 'Two-stage inference successful!'
+                });
+                setActiveTab('final-result');
+
+                // If AI report is available, switch to it in normal mode
+                if (result.data.report_content && !isAdvancedMode) {
+                    setActiveRightTab('report');
+                }
+            } else {
+                throw new Error(result.error || 'Inference failed');
+            }
+        } catch (error) {
+            console.error('Error during prediction:', error);
+            setStatusMessage({
+                type: 'error',
+                message: `Inference Error: ${error.message}`
+            });
+            resetPredictionUI(false);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Process the results from two-stage prediction
+    const processTwoStageResults = async (result) => {
+        // Update state with first stage results
+        const firstStageResults = Array.isArray(result.first_stage)
+            ? result.first_stage.map(p => ({...p, visible: true}))
+            : [];
+
+        let finalDetections = [];
+
+        // Check if final_detections has content
+        if (Array.isArray(result.final_detections) && result.final_detections.length > 0) {
+            finalDetections = result.final_detections.map(p => ({...p, visible: true}));
+        } else if (Array.isArray(result.second_stage) && result.second_stage.length > 0 &&
+            Array.isArray(result.second_stage[0].second_detections) &&
+            result.second_stage[0].second_detections.length > 0) {
+
+            // Get the first second_stage result which has the detections
+            const secondStageResult = result.second_stage[0];
+            const scalingInfo = secondStageResult.scaling_info || {};
+
+            // Process each second_detection and add to finalDetections
+            secondStageResult.second_detections.forEach(detection => {
+                // Check if we need to apply scaling/transformation
+                let box = [...detection.box]; // Clone the box array
+
+                // Apply scaling if available
+                if (scalingInfo.scale_x && scalingInfo.scale_y &&
+                    scalingInfo.pad_left !== undefined && scalingInfo.pad_top !== undefined) {
+
+                    const [x1, y1, x2, y2] = box;
+
+                    // Apply scaling and padding to transform back to original coordinates
+                    box = [
+                        Math.round(x1 / scalingInfo.scale_x + secondStageResult.crop_box[0] - scalingInfo.pad_left),
+                        Math.round(y1 / scalingInfo.scale_y + secondStageResult.crop_box[1] - scalingInfo.pad_top),
+                        Math.round(x2 / scalingInfo.scale_x + secondStageResult.crop_box[0] - scalingInfo.pad_left),
+                        Math.round(y2 / scalingInfo.scale_y + secondStageResult.crop_box[1] - scalingInfo.pad_top)
+                    ];
+                }
+
+                // Add to final detections with transformed box
+                finalDetections.push({
+                    ...detection,
+                    box: box,
+                    visible: true
+                });
+            });
+        }
+
+        // Store the AI report content if available
+        if (result.report_content) {
+            setReportContent(result.report_content);
+        } else {
+            setReportContent(null);
+        }
+
+        // Update the state with the processed results
+        setPredictions({
+            firstStage: firstStageResults,
+            secondStage: result.second_stage || [],
+            finalDetections
+        });
+
+        try {
+            // Create images with boxes
+            let newResultImages = {...resultImages};
+
+            // Final result image
+            if (currentImage) {
+                try {
+                    const finalResultWithBoxes = await createImageWithBoxes(currentImage, finalDetections);
+                    newResultImages.finalResult = finalResultWithBoxes;
+                } catch (error) {
+                    console.error("Error creating final result image:", error);
+                    newResultImages.finalResult = currentImage;
+                }
+            }
+
+            // First stage image
+            if (currentImage && firstStageResults.length > 0) {
+                try {
+                    const firstStageDataURL = await createImageWithBoxes(currentImage, firstStageResults);
+                    newResultImages.firstStage = firstStageDataURL;
+                } catch (error) {
+                    console.error("Error creating first stage image:", error);
+                    newResultImages.firstStage = '';
+                }
+            } else {
+                newResultImages.firstStage = '';
+            }
+
+            // Update the result images state
+            setResultImages(newResultImages);
+
+        } catch (error) {
+            console.error("Error processing prediction results:", error);
+        }
+    };
+
+    // Handle when a detection's visibility is toggled
+    const handleDetectionVisibilityChange = async (index, isVisible) => {
+        // Update the predictions state
+        setPredictions(prev => {
+            const updatedDetections = [...prev.finalDetections];
+            if (updatedDetections[index]) {
+                updatedDetections[index] = {
+                    ...updatedDetections[index],
+                    visible: isVisible
+                };
+            }
+            return {
+                ...prev,
+                finalDetections: updatedDetections
+            };
+        });
+
+        // Update the final result image with the new visibility settings
+        if (currentImage) {
+            try {
+                const updatedDetections = [...predictions.finalDetections];
+                if (updatedDetections[index]) {
+                    updatedDetections[index].visible = isVisible;
+                }
+
+                const updatedImage = await createImageWithBoxes(currentImage, updatedDetections);
+                setResultImages(prev => ({
+                    ...prev,
+                    finalResult: updatedImage
+                }));
+            } catch (error) {
+                console.error("Error updating image after visibility change:", error);
+            }
+        }
+    };
+
+    // Handle all detections visibility toggle
+    const handleAllDetectionsVisibilityChange = async (isVisible) => {
+        // Update all predictions with the new visibility
+        setPredictions(prev => {
+            const updatedDetections = prev.finalDetections.map(detection => ({
+                ...detection,
+                visible: isVisible
+            }));
+
+            return {
+                ...prev,
+                finalDetections: updatedDetections
+            };
+        });
+
+        // Update the final result image
+        if (currentImage) {
+            try {
+                const updatedDetections = predictions.finalDetections.map(detection => ({
+                    ...detection,
+                    visible: isVisible
+                }));
+
+                const updatedImage = await createImageWithBoxes(currentImage, updatedDetections);
+                setResultImages(prev => ({
+                    ...prev,
+                    finalResult: updatedImage
+                }));
+            } catch (error) {
+                console.error("Error updating all detections visibility:", error);
+            }
+        }
+    };
+
+    // Handle image click for zoom
+    const handleImageClick = (imageURL) => {
+        if (imageURL) {
+            setZoomedImage(imageURL);
+            setZoomModalOpen(true);
+        }
+    };
 
     return (
-        // Main container:
-        // - Full screen height
-        // - Flex column for mobile (default), flex row for medium screens and up
-        // - overflow-hidden to prevent page scroll, children manage their own scroll
-        <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-gray-100 dark:bg-gray-950">
-            {/* Left Panel: Contains ConfigPanel and ImagePanel */}
-            {/* - Full width on mobile, fixed width on md+ screens */}
-            {/* - Vertical scrolling if content overflows */}
-            {/* - Flex column to stack ConfigPanel and ImagePanel */}
-            <div className="w-full md:w-[400px] lg:w-[450px] p-3 md:p-4 bg-white dark:bg-gray-900 shadow-md md:shadow-lg flex flex-col overflow-y-auto custom-scrollbar">
-                <ConfigPanel
-                    onPredict={handlePredict}
-                    onImageChange={handleImageChange}
-                    isLoading={isLoading}
-                    imageSelected={!!image}
-                    onOpenConfig={() => setIsConfigModalOpen(true)}
-                />
-                {/* ImagePanel container: flex-grow allows it to take available space in the left column */}
-                <div className="mt-3 md:mt-4 flex-1 flex flex-col min-h-[200px]"> {/* Added min-h and flex-1 flex flex-col */}
-                    <ImagePanel
-                        preview={preview}
-                        onZoom={() => setIsZoomModalOpen(true)}
-                        error={error} // Pass error to ImagePanel to display image-related errors
+        <div className="w-full max-w-full overflow-hidden">
+            {/* Page header */}
+            <div className="mb-6">
+                <h2 className="text-primary-dark-blue text-2xl font-semibold pb-2 border-b-2 border-accent-pink mb-4">
+                    Intelligent Defect Detection
+                </h2>
+            </div>
+
+            {/* Main content area */}
+            <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-240px)] min-h-[600px]">
+                {/* Left section - Image display and controls */}
+                <div className="lg:w-7/12 xl:w-8/12 flex flex-col gap-6 h-full">
+                    {/* Action buttons and status messages */}
+                    <ActionBar
+                        isLoading={isLoading}
+                        currentImage={currentImage}
+                        fileInputFile={fileInputFile}
+                        statusMessage={statusMessage}
+                        onFileInputClick={handleFileInputClick}
+                        onStartInference={handleStartInference}
                     />
+
+                    {/* Hidden file input */}
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/png, image/jpeg, image/jpg, image/bmp, image/webp"
+                        className="hidden"
+                    />
+
+                    {/* Image display */}
+                    <div className="flex-grow border border-neutral-gray rounded-lg shadow-card overflow-hidden">
+                        <ImagePanel
+                            activeTab={activeTab}
+                            setActiveTab={setActiveTab}
+                            resultImages={resultImages}
+                            currentImage={currentImage}
+                            handleImageClick={handleImageClick}
+                            handleFileInputClick={handleFileInputClick}
+                            isAdvancedMode={isAdvancedMode}
+                        />
+                    </div>
                 </div>
-            </div>
 
-            {/* Right Panel Container: Holds the AIReport */}
-            {/* - flex-1: Takes up remaining horizontal space on md+ screens */}
-            {/* - Full width on mobile (due to parent flex-col) */}
-            {/* - Flex column to allow RightPanel to fill height */}
-            {/* - overflow-y-auto: Fallback scroll for this container, though RightPanel/AIReport should manage primary scroll */}
-            <div className="flex-1 p-3 md:p-4 flex flex-col overflow-y-auto custom-scrollbar">
+                {/* Right section - Tabs (Results, Configuration, AI Report) */}
                 <RightPanel
-                    report={report}
-                    isLoading={isLoading}
-                    error={!preview && error} // Pass error only if it's not an image loading error shown in ImagePanel
+                    activeRightTab={activeRightTab}
+                    setActiveRightTab={setActiveRightTab}
+                    predictions={predictions}
+                    models={models}
+                    defaultModels={defaultModels}
+                    modelsFetched={modelsFetched}
+                    firstModelSelected={firstModelSelected}
+                    setFirstModelSelected={setFirstModelSelected}
+                    secondModelSelected={secondModelSelected}
+                    setSecondModelSelected={setSecondModelSelected}
+                    confidenceThreshold={confidenceThreshold}
+                    setConfidenceThreshold={setConfidenceThreshold}
+                    filterEnabled={filterEnabled}
+                    setFilterEnabled={setFilterEnabled}
+                    handleDetectionVisibilityChange={handleDetectionVisibilityChange}
+                    handleAllDetectionsVisibilityChange={handleAllDetectionsVisibilityChange}
+                    currentImage={currentImage}
+                    reportContent={reportContent}
+                    isAdvancedMode={isAdvancedMode}
                 />
             </div>
 
-            {isConfigModalOpen && (
-                <ConfigurationModal
-                    isOpen={isConfigModalOpen}
-                    onClose={() => setIsConfigModalOpen(false)}
-                    currentConfig={appConfig}
-                    onSave={(newConfig) => {
-                        setAppConfig(newConfig);
-                        setIsConfigModalOpen(false);
-                    }}
-                />
-            )}
-            {isZoomModalOpen && preview && (
-                <ImageZoomModal
-                    isOpen={isZoomModalOpen}
-                    onClose={() => setIsZoomModalOpen(false)}
-                    imageSrc={preview}
-                />
-            )}
+            {/* Image Zoom Modal */}
+            <ImageZoomModal
+                isOpen={zoomModalOpen}
+                imageUrl={zoomedImage}
+                onClose={() => setZoomModalOpen(false)}
+            />
+
+            {/* Mode Toggle */}
+            <ModeToggle
+                isAdvancedMode={isAdvancedMode}
+                onToggle={toggleMode}
+            />
         </div>
     );
 };
