@@ -70,7 +70,7 @@ const RightPanel = ({
                 </div>
             )}
 
-            {/* Tab content */}
+            {/* Tab content - Updated for better mobile responsiveness */}
             <div className="flex-grow overflow-hidden">
                 {/* Results tab - Only visible in advanced mode */}
                 {isAdvancedMode && (

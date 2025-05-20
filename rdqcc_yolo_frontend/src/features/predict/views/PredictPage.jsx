@@ -6,6 +6,7 @@ import ActionBar from '../components/ActionBar';
 import ImagePanel from '../components/ImagePanel';
 import RightPanel from '../components/RightPanel';
 import ModeToggle from '../../../shared/components/ModeToggle';
+import StatusMessage from '../components/StatusMessage';
 
 const PredictPage = () => {
     // Mode state (normal vs advanced)
@@ -418,19 +419,70 @@ const PredictPage = () => {
                 </h2>
             </div>
 
-            {/* Main content area */}
-            <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-240px)] min-h-[600px]">
+            {/* Main content area - Updated for better mobile responsiveness */}
+            <div className="flex flex-col lg:flex-row gap-6 lg:h-[calc(100vh-240px)] min-h-[500px]">
                 {/* Left section - Image display and controls */}
-                <div className="lg:w-8/12 flex flex-col gap-6 h-full">
-                    {/* Action buttons and status messages */}
-                    <ActionBar
-                        isLoading={isLoading}
-                        currentImage={currentImage}
-                        fileInputFile={fileInputFile}
-                        statusMessage={statusMessage}
-                        onFileInputClick={handleFileInputClick}
-                        onStartInference={handleStartInference}
-                    />
+                <div className="lg:w-8/12 flex flex-col gap-6 mb-6 lg:mb-0">
+                    {/* Action buttons */}
+                    <div className="flex flex-wrap gap-4">
+                        {/* Upload button */}
+                        <button
+                            onClick={handleFileInputClick}
+                            className="flex-1 bg-gradient-primary text-neutral-white py-3 px-4 rounded-full font-medium
+                              shadow-button hover:filter hover:brightness-110
+                              transition transform hover:-translate-y-0.5 hover:shadow-button-hover
+                              flex items-center justify-center gap-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20"
+                                 fill="currentColor">
+                                <path fillRule="evenodd"
+                                      d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"
+                                      clipRule="evenodd"/>
+                            </svg>
+                            Upload Image
+                        </button>
+
+                        {/* Start inference button */}
+                        <button
+                            onClick={handleStartInference}
+                            disabled={isLoading || !currentImage}
+                            className="flex-1 bg-gradient-accent text-neutral-white py-3 px-4 rounded-full font-medium
+                              shadow-button hover:filter hover:brightness-110
+                              transition transform hover:-translate-y-0.5 hover:shadow-button-hover
+                              disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+                              flex items-center justify-center gap-2"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                         viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor"
+                                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Processing...
+                                </>
+                            ) : (
+                                <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20"
+                                         fill="currentColor">
+                                        <path fillRule="evenodd"
+                                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                                              clipRule="evenodd"/>
+                                    </svg>
+                                    Start Inference
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Status message */}
+                    {statusMessage && (
+                        <div className="flex justify-center">
+                            <StatusMessage type={statusMessage.type} message={statusMessage.message}/>
+                        </div>
+                    )}
 
                     {/* Hidden file input */}
                     <input
@@ -456,27 +508,29 @@ const PredictPage = () => {
                 </div>
 
                 {/* Right section - Tabs (Results, Configuration, AI Report) */}
-                <RightPanel
-                    activeRightTab={activeRightTab}
-                    setActiveRightTab={setActiveRightTab}
-                    predictions={predictions}
-                    models={models}
-                    defaultModels={defaultModels}
-                    modelsFetched={modelsFetched}
-                    firstModelSelected={firstModelSelected}
-                    setFirstModelSelected={setFirstModelSelected}
-                    secondModelSelected={secondModelSelected}
-                    setSecondModelSelected={setSecondModelSelected}
-                    confidenceThreshold={confidenceThreshold}
-                    setConfidenceThreshold={setConfidenceThreshold}
-                    filterEnabled={filterEnabled}
-                    setFilterEnabled={setFilterEnabled}
-                    handleDetectionVisibilityChange={handleDetectionVisibilityChange}
-                    handleAllDetectionsVisibilityChange={handleAllDetectionsVisibilityChange}
-                    currentImage={currentImage}
-                    reportContent={reportContent}
-                    isAdvancedMode={isAdvancedMode}
-                />
+                <div className="lg:flex-1 flex flex-col">
+                    <RightPanel
+                        activeRightTab={activeRightTab}
+                        setActiveRightTab={setActiveRightTab}
+                        predictions={predictions}
+                        models={models}
+                        defaultModels={defaultModels}
+                        modelsFetched={modelsFetched}
+                        firstModelSelected={firstModelSelected}
+                        setFirstModelSelected={setFirstModelSelected}
+                        secondModelSelected={secondModelSelected}
+                        setSecondModelSelected={setSecondModelSelected}
+                        confidenceThreshold={confidenceThreshold}
+                        setConfidenceThreshold={setConfidenceThreshold}
+                        filterEnabled={filterEnabled}
+                        setFilterEnabled={setFilterEnabled}
+                        handleDetectionVisibilityChange={handleDetectionVisibilityChange}
+                        handleAllDetectionsVisibilityChange={handleAllDetectionsVisibilityChange}
+                        currentImage={currentImage}
+                        reportContent={reportContent}
+                        isAdvancedMode={isAdvancedMode}
+                    />
+                </div>
             </div>
 
             {/* Image Zoom Modal */}

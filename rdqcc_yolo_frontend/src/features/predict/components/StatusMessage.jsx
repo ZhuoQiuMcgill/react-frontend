@@ -1,4 +1,4 @@
-const StatusMessage = ({ type, message }) => {
+const StatusMessage = ({type, message}) => {
     // Map type to styles
     const typeStyles = {
         success: "bg-[#e4f1e4] text-[#1b5e20] border-[#a5d6a7]",
@@ -11,9 +11,25 @@ const StatusMessage = ({ type, message }) => {
 
     return (
         <div
-            className={`${styles} py-4 px-6 rounded-lg font-medium text-center border shadow-card text-base`}
+            className={`${styles} w-full sm:max-w-fit py-2 px-4 rounded-lg font-medium text-center border shadow-card text-sm`}
         >
-            {message}
+            <div className="flex items-center justify-center">
+                {type === 'success' && (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M5 13l4 4L19 7"/>
+                    </svg>
+                )}
+                {type === 'error' && (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none"
+                         viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                )}
+                {message}
+            </div>
         </div>
     );
 };

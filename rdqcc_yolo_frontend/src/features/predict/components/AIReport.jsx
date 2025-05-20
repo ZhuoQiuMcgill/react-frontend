@@ -66,8 +66,8 @@ const AIReport = ({currentImage, predictions, reportContent}) => {
 
     return (
         <div className="h-full flex flex-col overflow-hidden">
-            {/* Content area - removed duplicate header */}
-            <div className="p-6 flex-grow overflow-y-auto max-h-[calc(100vh-250px)]">
+            {/* Content area - with responsive height adjustments */}
+            <div className="p-6 flex-grow overflow-y-auto lg:max-h-[calc(100vh-250px)]">
                 {!reportContent ? (
                     <div className="flex flex-col items-center justify-center h-full">
                         {error && (
