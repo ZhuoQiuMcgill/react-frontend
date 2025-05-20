@@ -10,12 +10,16 @@ rdqcc_yolo_frontend/
                 assets/
                 components/
                     AIReport.jsx
+                    ActionBar.jsx
                     ButtonContainer.jsx
+                    ConfigPanel.jsx
                     ConfigurationModal.jsx
                     ImageDisplay.jsx
+                    ImagePanel.jsx
                     ImageZoomModal.jsx
                     PredictForm.jsx
                     ResultsList.jsx
+                    RightPanel.jsx
                     StatusMessage.jsx
                 hooks/
                 services/
