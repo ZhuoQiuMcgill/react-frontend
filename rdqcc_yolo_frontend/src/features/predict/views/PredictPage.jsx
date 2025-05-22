@@ -15,14 +15,44 @@ const PredictPage = () => {
         return saved ? saved === 'advanced' : false; // Default to normal mode
     });
 
+    // Click counter for advanced mode activation
+    const [clickCount, setClickCount] = useState(0);
+    const lastClickTimeRef = useRef(0);
+    const CLICK_TIMEOUT = 2000; // 2 seconds timeout between clicks
+    const REQUIRED_CLICKS = 7; // Number of clicks required to enter advanced mode
+
     // Save mode to localStorage when it changes
     useEffect(() => {
         localStorage.setItem('defect-ai-mode', isAdvancedMode ? 'advanced' : 'normal');
     }, [isAdvancedMode]);
 
-    // Toggle between normal and advanced modes
+    // Toggle between normal and advanced modes with click counter logic
     const toggleMode = () => {
-        setIsAdvancedMode(prevMode => !prevMode);
+        const currentTime = Date.now();
+
+        if (isAdvancedMode) {
+            // If already in advanced mode, single click exits
+            setIsAdvancedMode(false);
+            setClickCount(0);
+            return;
+        }
+
+        // Check if enough time has passed since last click
+        if (currentTime - lastClickTimeRef.current > CLICK_TIMEOUT) {
+            // Reset counter if timeout exceeded
+            setClickCount(1);
+        } else {
+            // Increment counter
+            setClickCount(prev => prev + 1);
+        }
+
+        lastClickTimeRef.current = currentTime;
+
+        // Enter advanced mode if required clicks reached
+        if (clickCount + 1 >= REQUIRED_CLICKS) {
+            setIsAdvancedMode(true);
+            setClickCount(0);
+        }
     };
 
     // State for models
@@ -490,6 +520,8 @@ const PredictPage = () => {
             <ModeToggle
                 isAdvancedMode={isAdvancedMode}
                 onToggle={toggleMode}
+                clickCount={clickCount}
+                requiredClicks={REQUIRED_CLICKS}
             />
         </div>
     );
