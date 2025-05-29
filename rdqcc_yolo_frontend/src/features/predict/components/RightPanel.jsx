@@ -28,7 +28,8 @@ const RightPanel = ({
                         isAdvancedMode
                     }) => {
     return (
-        <div className="lg:w-4/12 border border-neutral-gray rounded-lg shadow-card overflow-hidden bg-neutral-white flex flex-col h-full">
+        <div
+            className="lg:w-4/12 border border-neutral-gray rounded-lg shadow-card overflow-hidden bg-neutral-white flex flex-col h-full">
             {/* Tabs header - Only show multiple tabs in advanced mode */}
             {isAdvancedMode ? (
                 <div className="tabs-header flex border-b border-neutral-gray bg-neutral-light-gray">
@@ -60,13 +61,13 @@ const RightPanel = ({
                         }`}
                         onClick={() => setActiveRightTab('report')}
                     >
-                        AI Report
+                        AI Risk Assessment Report
                     </button>
                 </div>
             ) : (
-                /* Simple header for normal mode - always show AI Report */
+                /* Simple header for normal mode - always show AI Risk Assessment Report */
                 <div className="tabs-header border-b border-neutral-gray bg-neutral-light-gray py-3 px-6">
-                    <h3 className="text-primary-dark-blue font-medium m-0">AI Report</h3>
+                    <h3 className="text-primary-dark-blue font-medium m-0">AI Risk Assessment Report</h3>
                 </div>
             )}
 
@@ -102,7 +103,7 @@ const RightPanel = ({
                     </div>
                 )}
 
-                {/* AI Report tab - Always visible, but conditional on the activeRightTab in advanced mode */}
+                {/* AI Risk Assessment Report tab - Always visible, but conditional on the activeRightTab in advanced mode */}
                 <div
                     className={`h-full ${isAdvancedMode ? (activeRightTab === 'report' ? 'block' : 'hidden') : 'block'}`}>
                     <AIReport

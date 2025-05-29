@@ -43,49 +43,81 @@ const ModeToggle = ({isAdvancedMode, onToggle, clickCount = 0, requiredClicks = 
 
     return (
         <div
-            className="fixed bottom-4 right-4 z-50 opacity-30 hover:opacity-100 transition-opacity duration-300"
+            className="fixed bottom-2 right-2 z-50 opacity-5 hover:opacity-70 transition-all duration-700"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
             <button
                 onClick={onToggle}
-                className={`flex items-center gap-2 py-1 px-3 rounded-full text-xs font-medium transition-all duration-300
+                className={`group relative overflow-hidden flex items-center gap-1 py-1 px-2 rounded-lg text-xs font-medium transition-all duration-700 backdrop-blur-sm border shadow-sm transform hover:scale-110
           ${isAdvancedMode
-                    ? 'bg-primary-blue text-white'
+                    ? 'bg-gradient-to-r from-primary-blue to-primary-dark-blue text-white border-primary-blue/10 shadow-primary-blue/10'
                     : showClickProgress && clickCount > 0
-                        ? 'bg-accent-pink text-white'
-                        : 'bg-neutral-gray text-text-light'}`}
+                        ? 'bg-gradient-to-r from-accent-pink to-accent-dark-pink text-white border-accent-pink/10 shadow-accent-pink/10'
+                        : 'bg-white/60 text-neutral-500 border-white/10 shadow-neutral-200/20'}`}
                 aria-label={getAriaLabel()}
                 title={getAriaLabel()}
             >
+                <div
+                    className={`absolute inset-0 bg-gradient-to-r opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+                        isAdvancedMode
+                            ? 'from-white/5 to-transparent'
+                            : showClickProgress && clickCount > 0
+                                ? 'from-white/5 to-transparent'
+                                : 'from-primary-blue/3 to-transparent'
+                    }`}></div>
+
+                <div className={`relative z-10 p-1 rounded-md transition-all duration-300 ${
+                    isAdvancedMode
+                        ? 'bg-white/10'
+                        : showClickProgress && clickCount > 0
+                            ? 'bg-white/10'
+                            : 'bg-primary-blue/5'
+                }`}>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         className="h-3 w-3 transition-transform duration-300 group-hover:scale-110" fill="none"
+                         viewBox="0 0 24 24"
+                         stroke="currentColor">
+                        {isAdvancedMode ? (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        ) : (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707M6.343 17.657l-.707.707"/>
+                        )}
+                    </svg>
+                </div>
+
                 {(isHovered || showClickProgress) && (
-                    <span className={`whitespace-nowrap ${
+                    <span className={`relative z-10 whitespace-nowrap transition-all duration-300 text-xs ${
                         isAdvancedMode
                             ? 'text-white'
                             : showClickProgress && clickCount > 0
                                 ? 'text-white'
-                                : 'text-text-default'
+                                : 'text-primary-dark-blue'
                     }`}>
                         {getDisplayText()}
                     </span>
                 )}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                     stroke="currentColor">
-                    {isAdvancedMode ? (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                              d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                    ) : (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707M6.343 17.657l-.707.707"/>
-                    )}
-                </svg>
             </button>
 
             {/* Click progress indicator */}
             {!isAdvancedMode && showClickProgress && clickCount > 0 && (
                 <div
-                    className="absolute bottom-full right-0 mb-2 bg-black/75 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                    {requiredClicks - clickCount} more clicks for advanced mode
+                    className="absolute bottom-full right-0 mb-1 bg-black/70 text-white text-xs px-2 py-1 rounded-md whitespace-nowrap backdrop-blur-sm border border-white/5 shadow-sm animate-pulse">
+                    <div className="flex items-center gap-1">
+                        <div className="flex gap-px">
+                            {Array.from({length: requiredClicks}).map((_, i) => (
+                                <div
+                                    key={i}
+                                    className={`w-1 h-1 rounded-full transition-all duration-200 ${
+                                        i < clickCount ? 'bg-accent-pink' : 'bg-white/20'
+                                    }`}
+                                />
+                            ))}
+                        </div>
+                        <span className="text-xs">{requiredClicks - clickCount}</span>
+                    </div>
                 </div>
             )}
         </div>

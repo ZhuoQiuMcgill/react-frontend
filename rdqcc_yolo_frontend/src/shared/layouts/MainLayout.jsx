@@ -1,10 +1,14 @@
-import {Outlet, NavLink} from 'react-router-dom';
+import {Outlet, NavLink, useLocation} from 'react-router-dom';
 import {useState} from 'react';
 import {useAppConfig} from '../hooks/useAppConfig';
 
 const MainLayout = () => {
     const {isProduction} = useAppConfig();
     const [currentYear] = useState(new Date().getFullYear());
+    const location = useLocation();
+
+    // Hide navigation on predict page and home page
+    const hideNavigation = location.pathname === '/predict' || location.pathname === '/';
 
     return (
         <div className="flex flex-col min-h-screen bg-neutral-light-gray">
@@ -13,36 +17,38 @@ const MainLayout = () => {
                 <h1 className="text-2xl font-semibold text-shadow">
                     <NavLink to="/">Defect-AI</NavLink>
                 </h1>
-                <nav>
-                    <ul className="flex gap-8">
-                        <li>
-                            <NavLink
-                                to="/predict"
-                                className={({isActive}) =>
-                                    `text-neutral-white font-medium py-2 relative transition-colors hover:text-accent-light-pink
-                  ${isActive ? 'text-accent-light-pink after:w-full' : 'after:w-0'} 
-                  after:content-[""] after:absolute after:h-0.5 after:bg-accent-pink after:bottom-[-2px] after:left-0 after:transition-all`
-                                }
-                            >
-                                Image Inference
-                            </NavLink>
-                        </li>
-                        {!isProduction && (
+                {!hideNavigation && (
+                    <nav>
+                        <ul className="flex gap-8">
                             <li>
                                 <NavLink
-                                    to="/train"
+                                    to="/predict"
                                     className={({isActive}) =>
                                         `text-neutral-white font-medium py-2 relative transition-colors hover:text-accent-light-pink
-                    ${isActive ? 'text-accent-light-pink after:w-full' : 'after:w-0'} 
-                    after:content-[""] after:absolute after:h-0.5 after:bg-accent-pink after:bottom-[-2px] after:left-0 after:transition-all`
+                      ${isActive ? 'text-accent-light-pink after:w-full' : 'after:w-0'} 
+                      after:content-[""] after:absolute after:h-0.5 after:bg-accent-pink after:bottom-[-2px] after:left-0 after:transition-all`
                                     }
                                 >
-                                    Model Training
+                                    Image Inference
                                 </NavLink>
                             </li>
-                        )}
-                    </ul>
-                </nav>
+                            {!isProduction && (
+                                <li>
+                                    <NavLink
+                                        to="/train"
+                                        className={({isActive}) =>
+                                            `text-neutral-white font-medium py-2 relative transition-colors hover:text-accent-light-pink
+                        ${isActive ? 'text-accent-light-pink after:w-full' : 'after:w-0'} 
+                        after:content-[""] after:absolute after:h-0.5 after:bg-accent-pink after:bottom-[-2px] after:left-0 after:transition-all`
+                                        }
+                                    >
+                                        Model Training
+                                    </NavLink>
+                                </li>
+                            )}
+                        </ul>
+                    </nav>
+                )}
             </header>
 
             <main className="flex-grow p-4 md:p-6 lg:p-8 w-full mx-auto my-4 bg-neutral-white rounded-lg shadow-main">

@@ -163,7 +163,7 @@ const AIReport = ({currentImage, predictions, reportContent}) => {
             }
             // Handle empty lines - only add breaks if we're not in a list
             else if (trimmedLine === '' && !inList) {
-                result.push(<br key={`br-${i}`} />);
+                result.push(<br key={`br-${i}`}/>);
             }
         }
 
@@ -198,12 +198,12 @@ const AIReport = ({currentImage, predictions, reportContent}) => {
                             </svg>
                             <p className="text-text-default font-medium mb-2">
                                 {currentImage && predictions.finalDetections.length > 0
-                                    ? "No AI report available for current detections."
-                                    : "Process an image to view the AI analysis report"}
+                                    ? "No AI risk assessment report available for current detections."
+                                    : "Process an image to view the AI risk assessment report"}
                             </p>
                             {(!currentImage || predictions.finalDetections.length === 0) && (
                                 <p className="text-neutral-dark-gray mt-2">
-                                    Reports are automatically generated when defects are detected
+                                    Risk assessment reports are automatically generated when defects are detected
                                 </p>
                             )}
                         </div>
