@@ -69,6 +69,7 @@ const PredictPage = () => {
     // State for images and predictions
     const [currentImage, setCurrentImage] = useState(null);
     const [fileInputFile, setFileInputFile] = useState(null);
+    const [fileSizeError, setFileSizeError] = useState(false);
     const [predictions, setPredictions] = useState({
         firstStage: [],
         secondStage: [],
@@ -125,16 +126,63 @@ const PredictPage = () => {
 
     // Handle image preview when a file is selected
     const handleImageSelect = (file) => {
+        console.info('File selected:', file ? file.name : 'null', file ? `${(file.size / 1024 / 1024).toFixed(2)}MB` : '');
+
         if (!file) {
             setCurrentImage(null);
             setFileInputFile(null);
+            setFileSizeError(false);
+            setResultImages({
+                finalResult: '',
+                firstStage: '',
+            });
             resetPredictionUI(true);
             return;
         }
 
+        // Check file size (7MB limit)
+        const maxSize = 7 * 1024 * 1024; // 7MB in bytes
+        const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+
+        if (file.size > maxSize) {
+            console.error(`File size ${fileSizeMB}MB exceeds 7MB limit`);
+
+            // Clear everything immediately
+            setCurrentImage(null);
+            setFileInputFile(null);
+            setFileSizeError(true);
+
+            // Clear result images explicitly
+            setResultImages({
+                finalResult: '',
+                firstStage: '',
+            });
+
+            // Clear predictions
+            setPredictions({
+                firstStage: [],
+                secondStage: [],
+                finalDetections: []
+            });
+
+            setStatusMessage({
+                type: 'error',
+                message: `Image size (${fileSizeMB}MB) must be less than 7MB. Please select a smaller image.`
+            });
+
+            console.info('File size error state set, image cleared');
+            return;
+        }
+
+        console.info(`File size ${fileSizeMB}MB is acceptable, processing...`);
+
+        // Reset error state and process valid file
+        setFileSizeError(false);
         setFileInputFile(file);
+
         const reader = new FileReader();
         reader.onload = (e) => {
+            console.info('File successfully loaded into memory');
             setCurrentImage(e.target.result);
             resetPredictionUI(true);
             setResultImages(prev => ({
@@ -145,11 +193,18 @@ const PredictPage = () => {
         };
 
         reader.onerror = () => {
+            console.error('Error reading file');
             setStatusMessage({
                 type: 'error',
                 message: 'Error reading file.'
             });
             setCurrentImage(null);
+            setFileInputFile(null);
+            setFileSizeError(false);
+            setResultImages({
+                finalResult: '',
+                firstStage: '',
+            });
             resetPredictionUI(true);
         };
 
@@ -165,8 +220,14 @@ const PredictPage = () => {
 
     // Handle file change
     const handleFileChange = (e) => {
+        console.info('File input changed, files:', e.target.files.length);
         if (e.target.files.length > 0) {
-            handleImageSelect(e.target.files[0]);
+            const selectedFile = e.target.files[0];
+            console.info('Selected file:', selectedFile.name, `${(selectedFile.size / 1024 / 1024).toFixed(2)}MB`);
+            handleImageSelect(selectedFile);
+        } else {
+            console.info('No file selected, clearing');
+            handleImageSelect(null);
         }
     };
 
@@ -176,33 +237,67 @@ const PredictPage = () => {
         setReportContent(null);
 
         if (clearData) {
-            setPredictions({
-                firstStage: [],
-                secondStage: [],
-                finalDetections: []
-            });
-            setResultImages({
-                finalResult: currentImage || '',
-                firstStage: '',
-            });
+            // Only reset fileSizeError if we're not in an error state
+            if (!fileSizeError) {
+                setPredictions({
+                    firstStage: [],
+                    secondStage: [],
+                    finalDetections: []
+                });
+                setResultImages({
+                    finalResult: currentImage || '',
+                    firstStage: '',
+                });
+            }
         } else {
-            // Keep the current image in final result view
-            setResultImages(prev => ({
-                ...prev,
-                finalResult: currentImage || ''
-            }));
+            // Keep the current image in final result view only if no file size error
+            if (!fileSizeError) {
+                setResultImages(prev => ({
+                    ...prev,
+                    finalResult: currentImage || ''
+                }));
+            }
         }
     };
 
     // Handle form submission for prediction
     const handleStartInference = async () => {
+        console.info('Start inference clicked', {
+            hasCurrentImage: !!currentImage,
+            fileSizeError,
+            fileSize: fileInputFile ? `${(fileInputFile.size / 1024 / 1024).toFixed(2)}MB` : 'none'
+        });
+
         if (!currentImage) {
+            console.warn('No current image, showing error');
             setStatusMessage({
                 type: 'error',
                 message: 'Please select and upload an image file first.'
             });
             return;
         }
+
+        // Check for file size error
+        if (fileSizeError) {
+            console.warn('File size error detected, showing error');
+            setStatusMessage({
+                type: 'error',
+                message: 'Image size must be less than 7MB. Please select a smaller image.'
+            });
+            return;
+        }
+
+        // Double check file size before processing
+        if (fileInputFile && fileInputFile.size > 7 * 1024 * 1024) {
+            console.error('File size check failed in inference');
+            setStatusMessage({
+                type: 'error',
+                message: 'Image size must be less than 7MB. Please select a smaller image.'
+            });
+            return;
+        }
+
+        console.info('All validations passed, starting inference...');
 
         resetPredictionUI(false);
         setIsLoading(true);
@@ -460,6 +555,7 @@ const PredictPage = () => {
                         statusMessage={statusMessage}
                         onFileInputClick={handleFileInputClick}
                         onStartInference={handleStartInference}
+                        fileSizeError={fileSizeError}
                     />
 
                     {/* Hidden file input */}
@@ -481,6 +577,7 @@ const PredictPage = () => {
                             handleImageClick={handleImageClick}
                             handleFileInputClick={handleFileInputClick}
                             isAdvancedMode={isAdvancedMode}
+                            fileSizeError={fileSizeError}
                         />
                     </div>
                 </div>
